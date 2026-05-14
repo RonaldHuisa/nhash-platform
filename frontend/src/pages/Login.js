@@ -1,6 +1,6 @@
 import React, { useState } from "react";
 import { Link, useNavigate } from "react-router-dom";
-import { FiEye, FiEyeOff, FiHome, FiMail, FiLock } from "react-icons/fi";
+import { FiEye, FiEyeOff, FiHome, FiMail, FiLock, FiCpu } from "react-icons/fi";
 import { loginUser, saveSession } from "../services/authService";
 
 export default function Login() {
@@ -60,12 +60,12 @@ export default function Login() {
         <FiHome />
       </button>
 
-      <div className="auth-logo-block">
-        <div className="auth-logo auth-logo-image">
-          <img src="/luven_favicon.ico" alt="NiceHash" />
+      <div className="auth-logo-block nicehash-auth-brand">
+        <div className="auth-logo auth-logo-chip">
+          <FiCpu />
         </div>
-        <h1>Bienvenido de vuelta</h1>
-        <p>Accede a tu panel para gestionar tu cuenta.</p>
+        <h1>Accede a NiceHash</h1>
+        <p>Gestiona tu potencia de hash, recargas y recompensas desde un panel seguro.</p>
       </div>
 
       <div className="auth-card">

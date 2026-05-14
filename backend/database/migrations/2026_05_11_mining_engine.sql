@@ -50,14 +50,14 @@ CREATE INDEX IF NOT EXISTS idx_mining_claims_claimed_at ON mining_claims(claimed
 
 INSERT INTO mining_plans (level, name, min_amount, max_amount, daily_percent, duration_hours, window_days, is_active)
 VALUES
-(1, 'Mining-1', 5, 100, 10.00, 24, 120, true),
-(2, 'Mining-2', 100, 300, 10.50, 24, 120, true),
-(3, 'Mining-3', 300, 800, 11.00, 24, 120, true),
-(4, 'Mining-4', 800, 1500, 11.50, 24, 120, true),
-(5, 'Mining-5', 1500, 4000, 12.00, 24, 120, true),
-(6, 'Mining-6', 4000, 8000, 12.50, 24, 120, true),
-(7, 'Mining-7', 8000, 15000, 13.00, 24, 120, true),
-(8, 'Mining-8', 15000, NULL, 13.50, 24, 120, true)
+(1, 'NiceHash-1', 3, 100, 8.00, 24, 120, true),
+(2, 'NiceHash-2', 100, 300, 8.50, 24, 120, true),
+(3, 'NiceHash-3', 300, 800, 9.00, 24, 120, true),
+(4, 'NiceHash-4', 800, 1500, 10.00, 24, 120, true),
+(5, 'NiceHash-5', 1500, 4000, 11.00, 24, 120, true),
+(6, 'NiceHash-6', 4000, 8000, 12.00, 24, 120, true),
+(7, 'NiceHash-7', 8000, 15000, 13.00, 24, 120, true),
+(8, 'NiceHash-8', 15000, NULL, 14.00, 24, 120, true)
 ON CONFLICT (level) DO UPDATE SET
   name = EXCLUDED.name,
   min_amount = EXCLUDED.min_amount,

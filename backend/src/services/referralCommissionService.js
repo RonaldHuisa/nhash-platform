@@ -6,7 +6,7 @@ async function createReferralCommissions(
     baseAmountUsdt
 ) {
     const percentages = {
-        1: 8,
+        1: 5,
         2: 2,
         3: 1,
     };

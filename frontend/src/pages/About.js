@@ -4,14 +4,14 @@ import { FiArrowLeft, FiCpu } from "react-icons/fi";
 import { useI18n } from "../i18n/I18nContext";
 
 const PLAN_ROWS = [
-  { level: "NiceHash-1", deposit: "5.00 - 150.00", income: "8.00%", validity: "120 días" },
-  { level: "NiceHash-2", deposit: "150.00 - 300.00", income: "8.50%", validity: "120 días" },
-  { level: "NiceHash-3", deposit: "300.00 - 800.00", income: "9.00%", validity: "120 días" },
-  { level: "NiceHash-4", deposit: "800.00 - 1,500.00", income: "10.00%", validity: "120 días" },
-  { level: "NiceHash-5", deposit: "1,500.00 - 4,000.00", income: "11.00%", validity: "120 días" },
-  { level: "NiceHash-6", deposit: "4,000.00 - 8,000.00", income: "12.00%", validity: "120 días" },
-  { level: "NiceHash-7", deposit: "8,000.00 - 15,000.00", income: "13.00%", validity: "120 días" },
-  { level: "NiceHash-8", deposit: "15,000.00+", income: "14.00%", validity: "120 días" },
+  { level: "NiceHash-1", deposit: "5.00 - 150.00", income: "3.00%", validity: "120 días" },
+  { level: "NiceHash-2", deposit: "150.00 - 300.00", income: "3.30%", validity: "120 días" },
+  { level: "NiceHash-3", deposit: "300.00 - 800.00", income: "3.60%", validity: "120 días" },
+  { level: "NiceHash-4", deposit: "800.00 - 1,500.00", income: "4.00%", validity: "120 días" },
+  { level: "NiceHash-5", deposit: "1,500.00 - 4,000.00", income: "4.30%", validity: "120 días" },
+  { level: "NiceHash-6", deposit: "4,000.00 - 8,000.00", income: "4.60%", validity: "120 días" },
+  { level: "NiceHash-7", deposit: "8,000.00 - 15,000.00", income: "5.00%", validity: "120 días" },
+  { level: "NiceHash-8", deposit: "15,000.00+", income: "5.50%", validity: "120 días" },
 ];
 
 export default function About() {
@@ -73,7 +73,7 @@ export default function About() {
 
         <div className="about-nicehash-income-card">
           <h2>{t("2: Ingresos por inversión minera")}</h2>
-          <p>{t("Ingresos por minería de 8% a 14%, según el nivel NiceHash activo.")}</p>
+          <p>{t("Ingresos por minería de 3% a 5.5%, según el nivel NiceHash activo.")}</p>
         </div>
       </section>
 

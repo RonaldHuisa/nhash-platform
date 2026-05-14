@@ -16067,15 +16067,3 @@ button:hover,
     transform: translate(-50%, -50%);
   }
 }
-
-.market-prices-empty {
-  margin-top: 14px;
-  padding: 14px 16px;
-  border-radius: 16px;
-  color: rgba(255, 245, 220, 0.82);
-  background: rgba(0, 0, 0, 0.18);
-  border: 1px solid rgba(255, 191, 73, 0.18);
-  font-size: 13px;
-  font-weight: 700;
-  text-align: center;
-}

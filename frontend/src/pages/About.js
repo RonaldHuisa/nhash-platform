@@ -68,7 +68,7 @@ export default function About() {
 
         <div className="about-nicehash-income-card">
           <h2>{t("1: Ingresos por invitar a amigos")}</h2>
-          <p>{t("Forma un equipo e invita a amigos, puedes obtener Nivel A: 8%, Nivel B: 2% y Nivel C: 1% de comisión.")}</p>
+          <p>{t("Forma un equipo e invita a amigos, puedes obtener Nivel A: 5%, Nivel B: 2% y Nivel C: 1% de comisión.")}</p>
         </div>
 
         <div className="about-nicehash-income-card">

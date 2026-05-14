@@ -19,7 +19,7 @@ import { FaFacebookF, FaTelegramPlane, FaTiktok, FaWhatsapp } from "react-icons/
 import { useLocation, useNavigate } from "react-router-dom";
 import { LANGUAGES, useI18n } from "../i18n/I18nContext";
 import useInstallPrompt from "../pwa/useInstallPrompt";
-import { getMiningStatus, getMarketPrices, getPromotionDashboard } from "../services/authService";
+import { getMiningStatus, getPromotionDashboard } from "../services/authService";
 import pointsLogData from "../data/pointsLog.json";
 
 function toNumber(value) {
@@ -34,54 +34,6 @@ function formatUsdt(value) {
     maximumFractionDigits: 2,
   });
 }
-
-function formatMarketPrice(value) {
-  const number = toNumber(value);
-  if (number >= 1000) {
-    return number.toLocaleString("en-US", { minimumFractionDigits: 2, maximumFractionDigits: 2 });
-  }
-  if (number >= 1) {
-    return number.toLocaleString("en-US", { minimumFractionDigits: 4, maximumFractionDigits: 4 });
-  }
-  return number.toLocaleString("en-US", { minimumFractionDigits: 6, maximumFractionDigits: 8 });
-}
-
-const MARKET_ICON_MAP = {
-  BTC: "₿",
-  ETH: "Ξ",
-  BNB: "◇",
-  XRP: "✕",
-  ADA: "A",
-  SOL: "S",
-  DOGE: "Ð",
-  DOT: "●",
-  LTC: "Ł",
-  TRX: "T",
-  AVAX: "A",
-  BCH: "฿",
-  SHIB: "🐕",
-};
-
-const MARKET_LOGO_MAP = {
-  BTC: "https://assets.coincap.io/assets/icons/btc@2x.png",
-  ETH: "https://assets.coincap.io/assets/icons/eth@2x.png",
-  BCH: "https://assets.coincap.io/assets/icons/bch@2x.png",
-  BNB: "https://assets.coincap.io/assets/icons/bnb@2x.png",
-  XRP: "https://assets.coincap.io/assets/icons/xrp@2x.png",
-  ADA: "https://assets.coincap.io/assets/icons/ada@2x.png",
-  SOL: "https://assets.coincap.io/assets/icons/sol@2x.png",
-  DOGE: "https://assets.coincap.io/assets/icons/doge@2x.png",
-  DOT: "https://assets.coincap.io/assets/icons/dot@2x.png",
-  LTC: "https://assets.coincap.io/assets/icons/ltc@2x.png",
-  TRX: "https://assets.coincap.io/assets/icons/trx@2x.png",
-  SHIB: "https://assets.coincap.io/assets/icons/shib@2x.png",
-  AVAX: "https://assets.coincap.io/assets/icons/avax@2x.png",
-};
-
-
-
-
-
 
 function formatPointPrize(value) {
   return Number(value || 0).toLocaleString("en-US", {
@@ -137,9 +89,6 @@ export default function Home() {
   const [earningsWallet, setEarningsWallet] = useState(0);
   const [currentLevel, setCurrentLevel] = useState("");
   const [loadError, setLoadError] = useState("");
-  const [marketPrices, setMarketPrices] = useState([]);
-  const [marketUpdatedAt, setMarketUpdatedAt] = useState(null);
-  const [marketError, setMarketError] = useState("");
   const [referralLink, setReferralLink] = useState(`${window.location.origin}/register`);
   const [pointLogs, setPointLogs] = useState(() => getRandomPointsLog());
   const [pointStartIndex, setPointStartIndex] = useState(0);
@@ -205,20 +154,6 @@ export default function Home() {
     }
   }, []);
 
-  const loadMarket = useCallback(async () => {
-    try {
-      const result = await getMarketPrices();
-      const prices = Array.isArray(result?.prices) ? result.prices : [];
-      setMarketPrices(prices);
-      setMarketUpdatedAt(result?.updatedAt || null);
-      setMarketError("");
-    } catch (error) {
-      console.error("MARKET PRICES ERROR:", error);
-      setMarketError(error.message || "No se pudieron cargar precios.");
-    }
-  }, []);
-
-
   const loadReferralLink = useCallback(async () => {
     try {
       const result = await getPromotionDashboard();
@@ -229,12 +164,6 @@ export default function Home() {
       console.warn("REFERRAL LINK ERROR:", error);
     }
   }, []);
-
-  useEffect(() => {
-    loadMarket();
-    const interval = setInterval(loadMarket, 60000);
-    return () => clearInterval(interval);
-  }, [loadMarket]);
 
   useEffect(() => {
     loadHome();
@@ -634,71 +563,6 @@ export default function Home() {
           <strong data-no-translate="true">{liveStats.production.toLocaleString("en-US")}</strong>
           <span>{t("Producción total")}</span>
         </article>
-      </section>
-
-      <section className="market-prices-card">
-        <div className="market-prices-head">
-          <div>
-            <span>{t("MERCADO")}</span>
-            <h2>{t("Precios en tiempo real")}</h2>
-          </div>
-          <button type="button" onClick={loadMarket} aria-label="Actualizar precios">
-            <FiRefreshCw />
-          </button>
-        </div>
-
-        <div className="market-exchange-tabs" aria-label="Exchange">
-          <span className="active">COINGECKO</span>
-          <span>OKX</span>
-          <span>HUOBI</span>
-          <span>COINBASE</span>
-        </div>
-
-        {marketError ? (
-          <div className="market-prices-error">{marketError}</div>
-        ) : marketPrices.length === 0 ? (
-          <div className="market-prices-empty">Precios temporalmente no disponibles.</div>
-        ) : (
-          <div className="market-prices-list">
-            {marketPrices.map((coin) => {
-              const change = toNumber(coin.priceChangePercent);
-              const positive = change >= 0;
-              const asset = coin.asset || String(coin.symbol || "").replace("USDT", "");
-
-              return (
-                <article className="market-price-row" key={coin.symbol}>
-                  <div className="market-coin-left">
-                    <span className={`market-coin-icon market-${asset.toLowerCase()}`} data-no-translate="true">
-                      {MARKET_LOGO_MAP[asset] ? (
-                        <img src={MARKET_LOGO_MAP[asset]} alt={asset} loading="lazy" />
-                      ) : (
-                        MARKET_ICON_MAP[asset] || asset.slice(0, 1)
-                      )}
-                    </span>
-                    <div>
-                      <strong data-no-translate="true">{asset}</strong>
-                      <small>/USDT</small>
-                    </div>
-                  </div>
-
-                  <b className={`market-price-value ${positive ? "up" : "down"}`} data-no-translate="true">
-                    {formatMarketPrice(coin.lastPrice)}
-                  </b>
-
-                  <span className={`market-change-pill ${positive ? "up" : "down"}`} data-no-translate="true">
-                    {positive ? "+" : ""}{change.toFixed(2)}%
-                  </span>
-                </article>
-              );
-            })}
-          </div>
-        )}
-
-        {marketUpdatedAt && (
-          <div className="market-updated" data-no-translate="true">
-            Actualizado: {new Date(marketUpdatedAt).toLocaleTimeString()}
-          </div>
-        )}
       </section>
 
       <section className="home-share-card">

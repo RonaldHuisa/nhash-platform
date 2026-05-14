@@ -151,7 +151,11 @@ export default function HashRewards() {
           <section className="hash-rewards-card hash-rewards-rules">
             <h2>{t("Cómo funciona")}</h2>
             <p>
-              {t("Cada invitado directo registrado con tu código entrega 1 punto hash.")}
+              {t("Solo cuentan invitados directos que hayan activado una inversión mínima de")} {" "}
+              <b data-no-translate="true">{formatNumber(status?.minValidInvestmentUsdt)} USDT</b>.
+            </p>
+            <p>
+              {t("Cada invitado directo válido registrado con tu código entrega 1 punto hash.")}
             </p>
             <p>
               {t("Cada punto puede canjearse por")}{" "}

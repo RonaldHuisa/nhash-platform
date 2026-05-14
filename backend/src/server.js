@@ -16,6 +16,7 @@ const miningRoutes = require("./routes/miningRoutes");
 const hashRewardsRoutes = require("./routes/hashRewardsRoutes");
 const reinvestRoutes = require("./routes/reinvestRoutes");
 const marketRoutes = require("./routes/marketRoutes");
+const alchemyWebhookRoutes = require("./routes/alchemyWebhookRoutes");
 const { startAutomaticDepositScanner } = require("./services/depositScannerService");
 
 
@@ -48,7 +49,11 @@ app.use(cors({
   credentials: true,
 }));
 
-app.use(express.json());
+app.use(express.json({
+  verify: (req, res, buf) => {
+    req.rawBody = buf ? buf.toString("utf8") : "";
+  },
+}));
 
 app.use("/api", (req, res, next) => {
   res.set("Cache-Control", "no-store, no-cache, must-revalidate, proxy-revalidate");
@@ -78,6 +83,7 @@ app.use("/api/mining", miningRoutes);
 app.use("/api/hash-rewards", hashRewardsRoutes);
 app.use("/api/reinvest", reinvestRoutes);
 app.use("/api/market", marketRoutes);
+app.use("/api/webhooks/alchemy", alchemyWebhookRoutes);
 
 const PORT = process.env.PORT || 4000;
 

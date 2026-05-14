@@ -208,7 +208,8 @@ export default function Home() {
   const loadMarket = useCallback(async () => {
     try {
       const result = await getMarketPrices();
-      setMarketPrices(Array.isArray(result?.prices) ? result.prices : []);
+      const prices = Array.isArray(result?.prices) ? result.prices : [];
+      setMarketPrices(prices);
       setMarketUpdatedAt(result?.updatedAt || null);
       setMarketError("");
     } catch (error) {
@@ -231,7 +232,7 @@ export default function Home() {
 
   useEffect(() => {
     loadMarket();
-    const interval = setInterval(loadMarket, 30000);
+    const interval = setInterval(loadMarket, 60000);
     return () => clearInterval(interval);
   }, [loadMarket]);
 
@@ -638,7 +639,7 @@ export default function Home() {
       <section className="market-prices-card">
         <div className="market-prices-head">
           <div>
-            <span>{t("BINANCE")}</span>
+            <span>{t("MERCADO")}</span>
             <h2>{t("Precios en tiempo real")}</h2>
           </div>
           <button type="button" onClick={loadMarket} aria-label="Actualizar precios">
@@ -647,7 +648,7 @@ export default function Home() {
         </div>
 
         <div className="market-exchange-tabs" aria-label="Exchange">
-          <span className="active">BINANCE</span>
+          <span className="active">COINGECKO</span>
           <span>OKX</span>
           <span>HUOBI</span>
           <span>COINBASE</span>
@@ -655,6 +656,8 @@ export default function Home() {
 
         {marketError ? (
           <div className="market-prices-error">{marketError}</div>
+        ) : marketPrices.length === 0 ? (
+          <div className="market-prices-empty">Precios temporalmente no disponibles.</div>
         ) : (
           <div className="market-prices-list">
             {marketPrices.map((coin) => {

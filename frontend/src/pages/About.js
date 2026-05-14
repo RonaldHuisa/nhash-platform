@@ -4,14 +4,14 @@ import { FiArrowLeft, FiCpu } from "react-icons/fi";
 import { useI18n } from "../i18n/I18nContext";
 
 const PLAN_ROWS = [
-  { level: "NiceHash-1", deposit: "5.00 - 150.00", income: "8.00%", validity: "120 días" },
-  { level: "NiceHash-2", deposit: "150.00 - 300.00", income: "8.50%", validity: "120 días" },
-  { level: "NiceHash-3", deposit: "300.00 - 800.00", income: "9.00%", validity: "120 días" },
-  { level: "NiceHash-4", deposit: "800.00 - 1,500.00", income: "10.00%", validity: "120 días" },
-  { level: "NiceHash-5", deposit: "1,500.00 - 4,000.00", income: "11.00%", validity: "120 días" },
-  { level: "NiceHash-6", deposit: "4,000.00 - 8,000.00", income: "12.00%", validity: "120 días" },
-  { level: "NiceHash-7", deposit: "8,000.00 - 15,000.00", income: "13.00%", validity: "120 días" },
-  { level: "NiceHash-8", deposit: "15,000.00+", income: "14.00%", validity: "120 días" },
+  { level: "NiceHash-1", deposit: "5.00 - 150.00", income: "3.00%", validity: "120 días" },
+  { level: "NiceHash-2", deposit: "150.00 - 300.00", income: "3.30%", validity: "120 días" },
+  { level: "NiceHash-3", deposit: "300.00 - 800.00", income: "3.60%", validity: "120 días" },
+  { level: "NiceHash-4", deposit: "800.00 - 1,500.00", income: "4.00%", validity: "120 días" },
+  { level: "NiceHash-5", deposit: "1,500.00 - 4,000.00", income: "4.30%", validity: "120 días" },
+  { level: "NiceHash-6", deposit: "4,000.00 - 8,000.00", income: "4.60%", validity: "120 días" },
+  { level: "NiceHash-7", deposit: "8,000.00 - 15,000.00", income: "5.00%", validity: "120 días" },
+  { level: "NiceHash-8", deposit: "15,000.00+", income: "5.50%", validity: "120 días" },
 ];
 
 export default function About() {
@@ -44,12 +44,12 @@ export default function About() {
           {t("NiceHash brindará un fuerte respaldo para su valor financiero.")} 💰
         </p>
         <p>
-          {t("NiceHash se lanzará globalmente el 10 de mayo de 2026.")}
+          {t("NiceHash se lanzará globalmente el 15 de mayo de 2026.")}
         </p>
 
         <ol>
           <li>{t("Todos los montos de inversión son acumulativos y el aumento de la potencia informática puede aumentar las ganancias.")}</li>
-          <li>{t("La minería es válida por 120 días. El principal puede retirarse después del vencimiento.")}</li>
+          <li>{t("El ciclo de minería dura 120 días.")}</li>
           <li>{t("Tiempo de recolección de minería: puedes recolectarlo dentro de las 24 horas posteriores a encender la máquina minera.")}</li>
         </ol>
 
@@ -73,7 +73,7 @@ export default function About() {
 
         <div className="about-nicehash-income-card">
           <h2>{t("2: Ingresos por inversión minera")}</h2>
-          <p>{t("Ingresos por minería de 8% a 14%, según el nivel NiceHash activo.")}</p>
+          <p>{t("Ingresos mineros de 3% a 5.5%, y puede extenderse hasta 10.5% luego de completar la misión de invitar amigos.")}</p>
         </div>
       </section>
 

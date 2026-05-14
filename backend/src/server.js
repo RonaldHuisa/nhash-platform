@@ -30,9 +30,9 @@ const allowedOrigins = [
   "http://127.0.0.1:3001",
   "http://127.0.0.1:3005",
   "http://127.0.0.1:3100",
-  "https://luven.vip",
-  "https://www.luven.vip",
-  "https://floster-platform.onrender.com",
+  "https://nicehash-platform.onrender.com",
+  "https://yunxhi.vip",
+  "https://www.yunxhi.vip",
   process.env.FRONTEND_URL,
 ].filter(Boolean);
 

@@ -2,14 +2,14 @@ const pool = require("../config/db");
 const { ensureHashRewardsSchema, getHashBonusPercent } = require("./hashRewardsService");
 
 const MINING_PLANS = [
-  { level: 1, name: "NiceHash-1", minAmount: 5, maxAmount: 150, dailyPercent: 8.0, durationHours: 24, windowDays: 120 },
-  { level: 2, name: "NiceHash-2", minAmount: 150, maxAmount: 300, dailyPercent: 8.5, durationHours: 24, windowDays: 120 },
-  { level: 3, name: "NiceHash-3", minAmount: 300, maxAmount: 800, dailyPercent: 9.0, durationHours: 24, windowDays: 120 },
-  { level: 4, name: "NiceHash-4", minAmount: 800, maxAmount: 1500, dailyPercent: 10.0, durationHours: 24, windowDays: 120 },
-  { level: 5, name: "NiceHash-5", minAmount: 1500, maxAmount: 4000, dailyPercent: 11.0, durationHours: 24, windowDays: 120 },
-  { level: 6, name: "NiceHash-6", minAmount: 4000, maxAmount: 8000, dailyPercent: 12.0, durationHours: 24, windowDays: 120 },
-  { level: 7, name: "NiceHash-7", minAmount: 8000, maxAmount: 15000, dailyPercent: 13.0, durationHours: 24, windowDays: 120 },
-  { level: 8, name: "NiceHash-8", minAmount: 15000, maxAmount: null, dailyPercent: 14.0, durationHours: 24, windowDays: 120 },
+  { level: 1, name: "NiceHash-1", minAmount: 5, maxAmount: 150, dailyPercent: 3.0, durationHours: 24, windowDays: 120 },
+  { level: 2, name: "NiceHash-2", minAmount: 150, maxAmount: 300, dailyPercent: 3.3, durationHours: 24, windowDays: 120 },
+  { level: 3, name: "NiceHash-3", minAmount: 300, maxAmount: 800, dailyPercent: 3.6, durationHours: 24, windowDays: 120 },
+  { level: 4, name: "NiceHash-4", minAmount: 800, maxAmount: 1500, dailyPercent: 4.0, durationHours: 24, windowDays: 120 },
+  { level: 5, name: "NiceHash-5", minAmount: 1500, maxAmount: 4000, dailyPercent: 4.3, durationHours: 24, windowDays: 120 },
+  { level: 6, name: "NiceHash-6", minAmount: 4000, maxAmount: 8000, dailyPercent: 4.6, durationHours: 24, windowDays: 120 },
+  { level: 7, name: "NiceHash-7", minAmount: 8000, maxAmount: 15000, dailyPercent: 5.0, durationHours: 24, windowDays: 120 },
+  { level: 8, name: "NiceHash-8", minAmount: 15000, maxAmount: null, dailyPercent: 5.5, durationHours: 24, windowDays: 120 },
 ];
 
 function getAuthUserId(req) {

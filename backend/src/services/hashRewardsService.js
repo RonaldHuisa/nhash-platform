@@ -1,7 +1,7 @@
 const pool = require("../config/db");
 
-const MIN_VALID_INVESTMENT_USDT = 5;
-const POINT_PERCENT = 0.10;
+const MIN_VALID_INVESTMENT_USDT = 0;
+const POINT_PERCENT = 0.05;
 const MAX_BONUS_PERCENT = 5.00;
 
 function toNumber(value) {

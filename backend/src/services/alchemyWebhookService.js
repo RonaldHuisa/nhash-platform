@@ -452,27 +452,116 @@ async function processAlchemyWebhookPayload(payload, { expectedNetworkCode = nul
   return summary;
 }
 
-async function syncAlchemyWebhookAddresses({ networkCode } = {}) {
+function getAlchemyWebhookIdForNetwork(networkCode) {
+  if (networkCode === "BEP20-USDT") {
+    return process.env.ALCHEMY_BSC_WEBHOOK_ID || process.env.ALCHEMY_BEP20_WEBHOOK_ID;
+  }
+
+  if (networkCode === "POLYGON-USDT") {
+    return process.env.ALCHEMY_POLYGON_WEBHOOK_ID;
+  }
+
+  return null;
+}
+
+function getAlchemyWebhookNetworks(networkCode) {
+  const networks = [];
+
+  if (!networkCode || networkCode === "BEP20-USDT") {
+    networks.push({
+      code: "BEP20-USDT",
+      webhookId: getAlchemyWebhookIdForNetwork("BEP20-USDT"),
+    });
+  }
+
+  if (!networkCode || networkCode === "POLYGON-USDT") {
+    networks.push({
+      code: "POLYGON-USDT",
+      webhookId: getAlchemyWebhookIdForNetwork("POLYGON-USDT"),
+    });
+  }
+
+  return networks;
+}
+
+async function updateAlchemyWebhookAddresses({ webhookId, addressesToAdd = [], addressesToRemove = [] }) {
   const authToken = process.env.ALCHEMY_NOTIFY_AUTH_TOKEN || process.env.ALCHEMY_AUTH_TOKEN;
 
   if (!authToken) {
     throw new Error("Falta ALCHEMY_NOTIFY_AUTH_TOKEN en variables de entorno.");
   }
 
-  const networks = [];
-  if (!networkCode || networkCode === "BEP20-USDT") {
-    networks.push({
-      code: "BEP20-USDT",
-      webhookId: process.env.ALCHEMY_BSC_WEBHOOK_ID || process.env.ALCHEMY_BEP20_WEBHOOK_ID,
-    });
-  }
-  if (!networkCode || networkCode === "POLYGON-USDT") {
-    networks.push({
-      code: "POLYGON-USDT",
-      webhookId: process.env.ALCHEMY_POLYGON_WEBHOOK_ID,
-    });
+  if (!webhookId) {
+    throw new Error("Falta webhookId de Alchemy.");
   }
 
+  const addList = uniqueNonEmpty(addressesToAdd.map((address) => normalizeAddress(address)));
+  const removeList = uniqueNonEmpty(addressesToRemove.map((address) => normalizeAddress(address)));
+
+  let added = 0;
+  let removed = 0;
+  const maxChunkSize = Number(process.env.ALCHEMY_WEBHOOK_ADDRESS_CHUNK_SIZE || 500);
+
+  for (let index = 0; index < Math.max(addList.length, removeList.length, 1); index += maxChunkSize) {
+    const addChunk = addList.slice(index, index + maxChunkSize);
+    const removeChunk = removeList.slice(index, index + maxChunkSize);
+
+    if (addChunk.length === 0 && removeChunk.length === 0) continue;
+
+    const response = await fetch("https://dashboard.alchemy.com/api/update-webhook-addresses", {
+      method: "PATCH",
+      headers: {
+        "Content-Type": "application/json",
+        "X-Alchemy-Token": authToken,
+      },
+      body: JSON.stringify({
+        webhook_id: webhookId,
+        addresses_to_add: addChunk,
+        addresses_to_remove: removeChunk,
+      }),
+    });
+
+    if (!response.ok) {
+      const text = await response.text();
+      throw new Error(`Alchemy update-webhook-addresses HTTP ${response.status}: ${text}`);
+    }
+
+    added += addChunk.length;
+    removed += removeChunk.length;
+  }
+
+  return { added, removed };
+}
+
+async function addAlchemyAddressToNetworkWebhooks(address, networkCodes = ["BEP20-USDT", "POLYGON-USDT"]) {
+  const cleanAddress = normalizeAddress(address);
+
+  if (!cleanAddress || !/^0x[a-f0-9]{40}$/i.test(cleanAddress)) {
+    return { status: "skipped", reason: "invalid_address", address };
+  }
+
+  const networks = getAlchemyWebhookNetworks(null).filter((item) => networkCodes.includes(item.code));
+  const results = [];
+
+  for (const item of networks) {
+    if (!item.webhookId) {
+      results.push({ network: item.code, skipped: true, reason: "missing_webhook_id" });
+      continue;
+    }
+
+    const result = await updateAlchemyWebhookAddresses({
+      webhookId: item.webhookId,
+      addressesToAdd: [cleanAddress],
+    });
+
+    results.push({ network: item.code, webhookId: item.webhookId, ...result });
+  }
+
+  return { status: "ok", address: cleanAddress, results };
+}
+
+async function syncAlchemyWebhookAddresses({ networkCode } = {}) {
+  const networks = getAlchemyWebhookNetworks(networkCode);
   const results = [];
 
   for (const item of networks) {
@@ -494,34 +583,17 @@ async function syncAlchemyWebhookAddresses({ networkCode } = {}) {
     );
 
     const addresses = walletResult.rows.map((row) => row.address).filter(Boolean);
-    let added = 0;
+    const result = await updateAlchemyWebhookAddresses({
+      webhookId: item.webhookId,
+      addressesToAdd: addresses,
+    });
 
-    for (let index = 0; index < addresses.length; index += 1000) {
-      const chunk = addresses.slice(index, index + 1000);
-      if (chunk.length === 0) continue;
-
-      const response = await fetch("https://dashboard.alchemy.com/api/update-webhook-addresses", {
-        method: "PATCH",
-        headers: {
-          "Content-Type": "application/json",
-          "X-Alchemy-Token": authToken,
-        },
-        body: JSON.stringify({
-          webhook_id: item.webhookId,
-          addresses_to_add: chunk,
-          addresses_to_remove: [],
-        }),
-      });
-
-      if (!response.ok) {
-        const text = await response.text();
-        throw new Error(`Alchemy update-webhook-addresses ${item.code} HTTP ${response.status}: ${text}`);
-      }
-
-      added += chunk.length;
-    }
-
-    results.push({ network: item.code, webhookId: item.webhookId, added });
+    results.push({
+      network: item.code,
+      webhookId: item.webhookId,
+      wallets: addresses.length,
+      ...result,
+    });
   }
 
   return { status: "ok", results };
@@ -531,4 +603,6 @@ module.exports = {
   verifyAlchemySignature,
   processAlchemyWebhookPayload,
   syncAlchemyWebhookAddresses,
+  addAlchemyAddressToNetworkWebhooks,
+  updateAlchemyWebhookAddresses,
 };

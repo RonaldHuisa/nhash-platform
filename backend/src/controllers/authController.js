@@ -2,6 +2,8 @@ const bcrypt = require("bcryptjs");
 const jwt = require("jsonwebtoken");
 const pool = require("../config/db");
 
+const { addAlchemyAddressToNetworkWebhooks } = require("../services/alchemyWebhookService");
+
 const { generateUniqueReferralCode } = require("../utils/referralUtil");
 
 
@@ -159,7 +161,10 @@ async function register(req, res) {
 
         const generatedWallet = generateBep20Wallet();
 
-        const wallet = await client.query(
+        // Una misma wallet EVM puede recibir fondos en BSC y Polygon.
+        // Guardamos una fila por red para que los webhooks puedan identificar
+        // correctamente si la recarga llegó por BEP20-USDT o POLYGON-USDT.
+        const wallets = await client.query(
             `
             INSERT INTO wallets
             (
@@ -169,12 +174,13 @@ async function register(req, res) {
                 public_key, 
                 private_key_encrypted
             )
-            VALUES ($1, $2, $3, $4, $5)
+            VALUES
+                ($1, 'BEP20-USDT', $2, $3, $4),
+                ($1, 'POLYGON-USDT', $2, $3, $4)
             RETURNING id, network, address, public_key
             `,
             [
                 user.id,
-                "BEP20-USDT",
                 generatedWallet.address,
                 generatedWallet.publicKey,
                 generatedWallet.privateKeyEncrypted,
@@ -183,13 +189,35 @@ async function register(req, res) {
 
         await client.query("COMMIT");
 
+        // Sincroniza la wallet nueva con Alchemy sin bloquear el registro.
+        // Si Alchemy falla o faltan variables, el usuario igual queda creado y
+        // Moralis/pending sigue funcionando como respaldo.
+        addAlchemyAddressToNetworkWebhooks(generatedWallet.address, [
+            "BEP20-USDT",
+            "POLYGON-USDT",
+        ]).then((result) => {
+            console.log("ALCHEMY REGISTER WALLET SYNC:", {
+                userId: user.id,
+                address: generatedWallet.address,
+                result,
+            });
+        }).catch((syncError) => {
+            console.warn("ALCHEMY REGISTER WALLET SYNC SKIPPED/FAILED:", {
+                userId: user.id,
+                address: generatedWallet.address,
+                message: syncError.message,
+            });
+        });
+
         const token = createToken(user);
+        const primaryWallet = wallets.rows.find((item) => item.network === "BEP20-USDT") || wallets.rows[0];
 
         return res.status(201).json({
             message: "Usuario registrado correctamente.",
             token,
             user,
-            wallet: wallet.rows[0],
+            wallet: primaryWallet,
+            wallets: wallets.rows,
         });
     } catch (error) {
         await client.query("ROLLBACK");
@@ -250,7 +278,7 @@ async function login(req, res) {
             SELECT id, network, address, public_key
             FROM wallets
             WHERE user_id = $1
-            LIMIT 1
+            ORDER BY CASE WHEN network = 'BEP20-USDT' THEN 0 ELSE 1 END, id ASC
             `,
             [user.id]
         );
@@ -264,6 +292,7 @@ async function login(req, res) {
             token,
             user,
             wallet: walletResult.rows[0] || null,
+            wallets: walletResult.rows,
         });
     } catch (error) {
         console.error("LOGIN ERROR:", error);

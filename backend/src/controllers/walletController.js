@@ -13,9 +13,8 @@ async function getMyWallet(req, res) {
       SELECT id, user_id, network, address, public_key, created_at
       FROM wallets
       WHERE user_id = $1
-      ORDER BY 
-        CASE WHEN network = $2 THEN 0 ELSE 1 END,
-        id ASC
+        AND network = $2
+      ORDER BY id ASC
       LIMIT 1
       `,
       [userId, network.code]

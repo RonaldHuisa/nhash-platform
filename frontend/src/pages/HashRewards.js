@@ -151,14 +151,11 @@ export default function HashRewards() {
           <section className="hash-rewards-card hash-rewards-rules">
             <h2>{t("Cómo funciona")}</h2>
             <p>
-              {t("Solo cuentan invitados directos que hayan activado una inversión mínima de")} {" "}
+              {t("Solo cuentan invitados directos que hayan activado una inversión mínima de")}{" "}
               <b data-no-translate="true">{formatNumber(status?.minValidInvestmentUsdt)} USDT</b>.
             </p>
             <p>
-              {t("Cada invitado directo válido registrado con tu código entrega 1 punto hash.")}
-            </p>
-            <p>
-              {t("Cada punto puede canjearse por")}{" "}
+              {t("Cada invitado válido entrega 1 punto hash. Cada punto puede canjearse por")}{" "}
               <b data-no-translate="true">+{formatNumber(status?.pointPercent)}%</b>{" "}
               {t("de bonus de hash.")}
             </p>
@@ -175,7 +172,7 @@ export default function HashRewards() {
             </button>
             <button type="button" onClick={handleRedeem} disabled={!canRedeem}>
               <FiZap />
-              {t("Canjear")} <span data-no-translate="true">+{formatNumber(status?.pointPercent)}% Hash</span>
+              {`Canjear +${formatNumber(status?.pointPercent)}% Hash`}
             </button>
           </section>
         </>

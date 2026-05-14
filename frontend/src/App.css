@@ -16269,3 +16269,23 @@ button:hover,
     border-radius: 22px !important;
   }
 }
+
+/* ===== Hash rewards disabled redeem button readability v101 ===== */
+.hash-rewards-actions button:disabled,
+.hash-rewards-actions button[disabled] {
+  opacity: 1 !important;
+  filter: none !important;
+  background: linear-gradient(135deg, #9b9b9b, #7f7f7f) !important;
+  color: #3f3f3f !important;
+  font-size: 16px !important;
+  font-weight: 950 !important;
+  letter-spacing: 0 !important;
+  text-shadow: none !important;
+  box-shadow: none !important;
+}
+
+.hash-rewards-actions button:disabled svg,
+.hash-rewards-actions button[disabled] svg {
+  color: #565656 !important;
+  stroke-width: 2.4 !important;
+}

@@ -1,6 +1,6 @@
 const pool = require("../config/db");
 
-const MIN_VALID_INVESTMENT_USDT = 0;
+const MIN_VALID_INVESTMENT_USDT = Number(process.env.HASH_REWARD_MIN_VALID_INVESTMENT_USDT || 10);
 const POINT_PERCENT = 0.05;
 const MAX_BONUS_PERCENT = 5.00;
 

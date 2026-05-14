@@ -2,8 +2,8 @@ const pool = require("../config/db");
 const { ensureHashRewardsSchema, getHashBonusPercent } = require("./hashRewardsService");
 
 const MINING_PLANS = [
-  { level: 1, name: "NiceHash-1", minAmount: 3, maxAmount: 100, dailyPercent: 8.0, durationHours: 24, windowDays: 120 },
-  { level: 2, name: "NiceHash-2", minAmount: 100, maxAmount: 300, dailyPercent: 8.5, durationHours: 24, windowDays: 120 },
+  { level: 1, name: "NiceHash-1", minAmount: 5, maxAmount: 150, dailyPercent: 8.0, durationHours: 24, windowDays: 120 },
+  { level: 2, name: "NiceHash-2", minAmount: 150, maxAmount: 300, dailyPercent: 8.5, durationHours: 24, windowDays: 120 },
   { level: 3, name: "NiceHash-3", minAmount: 300, maxAmount: 800, dailyPercent: 9.0, durationHours: 24, windowDays: 120 },
   { level: 4, name: "NiceHash-4", minAmount: 800, maxAmount: 1500, dailyPercent: 10.0, durationHours: 24, windowDays: 120 },
   { level: 5, name: "NiceHash-5", minAmount: 1500, maxAmount: 4000, dailyPercent: 11.0, durationHours: 24, windowDays: 120 },
@@ -86,15 +86,7 @@ async function ensureMiningSchema(clientOrPool = pool) {
       `
       INSERT INTO mining_plans (level, name, min_amount, max_amount, daily_percent, duration_hours, window_days, is_active)
       VALUES ($1,$2,$3,$4,$5,$6,$7,true)
-      ON CONFLICT (level) DO UPDATE SET
-        name = EXCLUDED.name,
-        min_amount = EXCLUDED.min_amount,
-        max_amount = EXCLUDED.max_amount,
-        daily_percent = EXCLUDED.daily_percent,
-        duration_hours = EXCLUDED.duration_hours,
-        window_days = EXCLUDED.window_days,
-        is_active = true,
-        updated_at = CURRENT_TIMESTAMP
+      ON CONFLICT (level) DO NOTHING
       `,
       [plan.level, plan.name, plan.minAmount, plan.maxAmount, plan.dailyPercent, plan.durationHours, plan.windowDays]
     );

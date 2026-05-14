@@ -6,8 +6,8 @@ BEGIN;
 -- 1) Planes de minería: mínimo 3 USDT y porcentajes nuevos.
 INSERT INTO public.mining_plans (level, name, min_amount, max_amount, daily_percent, duration_hours, window_days, is_active, created_at, updated_at)
 VALUES
-  (1, 'NiceHash-1', 3.00,     100.00,   8.000000,  24, 120, true, NOW(), NOW()),
-  (2, 'NiceHash-2', 100.00,   300.00,   8.500000,  24, 120, true, NOW(), NOW()),
+  (1, 'NiceHash-1', 5.00,     150.00,   8.000000,  24, 120, true, NOW(), NOW()),
+  (2, 'NiceHash-2', 150.00,   300.00,   8.500000,  24, 120, true, NOW(), NOW()),
   (3, 'NiceHash-3', 300.00,   800.00,   9.000000,  24, 120, true, NOW(), NOW()),
   (4, 'NiceHash-4', 800.00,   1500.00,  10.000000, 24, 120, true, NOW(), NOW()),
   (5, 'NiceHash-5', 1500.00,  4000.00,  11.000000, 24, 120, true, NOW(), NOW()),
@@ -31,13 +31,13 @@ UPDATE public.vip_packages SET
     WHEN 1 THEN 'NiceHash-1' WHEN 2 THEN 'NiceHash-2' WHEN 3 THEN 'NiceHash-3' WHEN 4 THEN 'NiceHash-4'
     WHEN 5 THEN 'NiceHash-5' WHEN 6 THEN 'NiceHash-6' WHEN 7 THEN 'NiceHash-7' WHEN 8 THEN 'NiceHash-8' ELSE name END,
   price_usdt = CASE level
-    WHEN 1 THEN 3.00 WHEN 2 THEN 100.00 WHEN 3 THEN 300.00 WHEN 4 THEN 800.00
+    WHEN 1 THEN 5.00 WHEN 2 THEN 150.00 WHEN 3 THEN 300.00 WHEN 4 THEN 800.00
     WHEN 5 THEN 1500.00 WHEN 6 THEN 4000.00 WHEN 7 THEN 8000.00 WHEN 8 THEN 15000.00 ELSE price_usdt END,
   daily_income_usdt = CASE level
-    WHEN 1 THEN 0.24 WHEN 2 THEN 8.50 WHEN 3 THEN 27.00 WHEN 4 THEN 80.00
+    WHEN 1 THEN 0.40 WHEN 2 THEN 12.75 WHEN 3 THEN 27.00 WHEN 4 THEN 80.00
     WHEN 5 THEN 165.00 WHEN 6 THEN 480.00 WHEN 7 THEN 1040.00 WHEN 8 THEN 2100.00 ELSE daily_income_usdt END,
   task_reward_usdt = CASE level
-    WHEN 1 THEN 0.24 WHEN 2 THEN 8.50 WHEN 3 THEN 27.00 WHEN 4 THEN 80.00
+    WHEN 1 THEN 0.40 WHEN 2 THEN 12.75 WHEN 3 THEN 27.00 WHEN 4 THEN 80.00
     WHEN 5 THEN 165.00 WHEN 6 THEN 480.00 WHEN 7 THEN 1040.00 WHEN 8 THEN 2100.00 ELSE task_reward_usdt END,
   valid_days = 120,
   is_purchasable = true
@@ -46,8 +46,8 @@ WHERE level BETWEEN 1 AND 8;
 -- Si la tabla estaba vacía, inserta paquetes base.
 INSERT INTO public.vip_packages (level, name, price_usdt, daily_income_usdt, task_reward_usdt, task_cooldown_minutes, valid_days, is_purchasable, created_at)
 VALUES
-  (1, 'NiceHash-1', 3.00,     0.24,    0.24,    1440, 120, true, NOW()),
-  (2, 'NiceHash-2', 100.00,   8.50,    8.50,    1440, 120, true, NOW()),
+  (1, 'NiceHash-1', 5.00,     0.40,    0.40,    1440, 120, true, NOW()),
+  (2, 'NiceHash-2', 150.00,   12.75,   12.75,    1440, 120, true, NOW()),
   (3, 'NiceHash-3', 300.00,   27.00,   27.00,   1440, 120, true, NOW()),
   (4, 'NiceHash-4', 800.00,   80.00,   80.00,   1440, 120, true, NOW()),
   (5, 'NiceHash-5', 1500.00,  165.00,  165.00,  1440, 120, true, NOW()),

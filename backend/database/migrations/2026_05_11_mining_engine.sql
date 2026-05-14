@@ -50,8 +50,8 @@ CREATE INDEX IF NOT EXISTS idx_mining_claims_claimed_at ON mining_claims(claimed
 
 INSERT INTO mining_plans (level, name, min_amount, max_amount, daily_percent, duration_hours, window_days, is_active)
 VALUES
-(1, 'NiceHash-1', 3, 100, 8.00, 24, 120, true),
-(2, 'NiceHash-2', 100, 300, 8.50, 24, 120, true),
+(1, 'NiceHash-1', 5, 150, 8.00, 24, 120, true),
+(2, 'NiceHash-2', 150, 300, 8.50, 24, 120, true),
 (3, 'NiceHash-3', 300, 800, 9.00, 24, 120, true),
 (4, 'NiceHash-4', 800, 1500, 10.00, 24, 120, true),
 (5, 'NiceHash-5', 1500, 4000, 11.00, 24, 120, true),

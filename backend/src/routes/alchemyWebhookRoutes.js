@@ -1,6 +1,5 @@
 const express = require("express");
-const authMiddleware = require("../middleware/authMiddleware");
-const adminMiddleware = require("../middleware/adminMiddleware");
+const alchemySyncAuthMiddleware = require("../middleware/alchemySyncAuthMiddleware");
 const {
   receiveDepositWebhook,
   receiveBscDepositWebhook,
@@ -33,8 +32,8 @@ router.post("/deposits", receiveDepositWebhook);
 // =========================================================
 // SYNC DE WALLETS A ALCHEMY
 // =========================================================
-router.post("/sync-addresses", authMiddleware, adminMiddleware, syncAddresses);
-router.post("/bsc/sync-addresses", authMiddleware, adminMiddleware, syncBscAddresses);
-router.post("/polygon/sync-addresses", authMiddleware, adminMiddleware, syncPolygonAddresses);
+router.post("/sync-addresses", alchemySyncAuthMiddleware, syncAddresses);
+router.post("/bsc/sync-addresses", alchemySyncAuthMiddleware, syncBscAddresses);
+router.post("/polygon/sync-addresses", alchemySyncAuthMiddleware, syncPolygonAddresses);
 
 module.exports = router;

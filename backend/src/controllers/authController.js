@@ -79,15 +79,15 @@ async function register(req, res) {
 
         let referredById = null;
 
-        // Permite crear el primer usuario de una base nueva sin código de invitación.
-        // Importante: se mantiene el flujo normal de registro para que también se genere su wallet.
         const usersCountResult = await client.query(
             "SELECT COUNT(*)::int AS total FROM users"
         );
 
         const isFirstUser = usersCountResult.rows[0].total === 0;
+        const allowFirstUserWithoutReferral = String(process.env.ALLOW_FIRST_USER_WITHOUT_REFERRAL || "false").toLowerCase() === "true";
+        const canSkipReferral = isFirstUser && allowFirstUserWithoutReferral;
 
-        if (!isFirstUser) {
+        if (!canSkipReferral) {
             if (!referralCode || !referralCode.trim()) {
                 await client.query("ROLLBACK");
                 return res.status(400).json({

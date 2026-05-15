@@ -1,8 +1,9 @@
-const CACHE_NAME = "nicehash-pwa-v76";
+const CACHE_NAME = "nicehash-pwa-v120";
 const STATIC_ASSETS = [
-  "/manifest.json",
-  "/icons/icon-192.png",
-  "/icons/icon-512.png"
+  "/manifest.json?v=nicehash-v120",
+  "/favicon.ico?v=nicehash-v120",
+  "/icons/icon-192.png?v=nicehash-v120",
+  "/icons/icon-512.png?v=nicehash-v120"
 ];
 
 self.addEventListener("install", (event) => {

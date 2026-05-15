@@ -5,13 +5,10 @@ import { useI18n } from "../i18n/I18nContext";
 
 const PLAN_ROWS = [
   { level: "NiceHash-1", deposit: "5.00 - 150.00", income: "3.00%", validity: "120 días" },
-  { level: "NiceHash-2", deposit: "150.00 - 400.00", income: "3.25%", validity: "120 días" },
-  { level: "NiceHash-3", deposit: "400.00 - 800.00", income: "3.50%", validity: "120 días" },
-  { level: "NiceHash-4", deposit: "800.00 - 1,200.00", income: "3.75%", validity: "120 días" },
-  { level: "NiceHash-5", deposit: "1,200.00 - 1,600.00", income: "4.00%", validity: "120 días" },
-  { level: "NiceHash-6", deposit: "1,600.00 - 2,200.00", income: "4.25%", validity: "120 días" },
-  { level: "NiceHash-7", deposit: "2,200.00 - 3,000.00", income: "4.50%", validity: "120 días" },
-  { level: "NiceHash-8", deposit: "3,000.00 - 4,500.00", income: "5.00%", validity: "120 días" },
+  { level: "NiceHash-2", deposit: "150.00 - 350.00", income: "3.25%", validity: "120 días" },
+  { level: "NiceHash-3", deposit: "350.00 - 800.00", income: "3.50%", validity: "120 días" },
+  { level: "NiceHash-4", deposit: "800.00 - 1,500.00", income: "3.75%", validity: "120 días" },
+  { level: "NiceHash-5", deposit: "1,500.00 - 4,000.00", income: "4.00%", validity: "120 días" },
 ];
 
 export default function About() {

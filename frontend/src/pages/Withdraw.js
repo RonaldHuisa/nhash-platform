@@ -40,6 +40,7 @@ export default function Withdraw() {
   const [addressLocked, setAddressLocked] = useState(false);
   const [canWithdraw, setCanWithdraw] = useState(true);
   const [withdrawRequirementMessage, setWithdrawRequirementMessage] = useState("");
+  const [withdrawalDayPolicy, setWithdrawalDayPolicy] = useState(null);
   const [withdrawalPolicy, setWithdrawalPolicy] = useState(null);
 
   const [amount, setAmount] = useState("");
@@ -75,6 +76,7 @@ export default function Withdraw() {
       setAddressLocked(Boolean(data.addressLocked));
       setCanWithdraw(data.canWithdraw !== false);
       setWithdrawRequirementMessage(data.withdrawRequirementMessage || "");
+      setWithdrawalDayPolicy(data.withdrawalDayPolicy || null);
       setWithdrawalPolicy(data.withdrawalPolicy || null);
     } catch (error) {
       showToast(error.message);
@@ -116,7 +118,7 @@ export default function Withdraw() {
 
   const handleConfirm = async () => {
     if (!canWithdraw) {
-      showToast(t("Debes invertir mínimo 5 USDT para habilitar los retiros."));
+      showToast(t(withdrawRequirementMessage || "No puedes retirar en este momento."));
       return;
     }
 
@@ -175,7 +177,14 @@ export default function Withdraw() {
       {!canWithdraw && (
         <div className="withdraw-exact-note danger">
           <FiInfo />
-          <span>{t(withdrawRequirementMessage || "Debes invertir mínimo 5 USDT para habilitar los retiros.")}</span>
+          <span>{t(withdrawRequirementMessage || "No puedes retirar en este momento.")}</span>
+        </div>
+      )}
+
+      {canWithdraw && withdrawalDayPolicy?.message && (
+        <div className="withdraw-exact-note success">
+          <FiInfo />
+          <span>{t(withdrawalDayPolicy.message)}</span>
         </div>
       )}
 
@@ -278,7 +287,7 @@ export default function Withdraw() {
           onClick={handleConfirm}
           disabled={loading || sending || !canWithdraw}
         >
-          {!canWithdraw ? t("Inversión requerida") : sending ? t("Procesando...") : t("RETIRAR")}
+          {!canWithdraw ? t("No disponible") : sending ? t("Procesando...") : t("RETIRAR")}
         </button>
 
         <div className="withdraw-exact-note-simple">
@@ -295,6 +304,9 @@ export default function Withdraw() {
           </p>
           <p>1: {t("Retiro mínimo")} {Number(minWithdraw || 0).toFixed(2)} USDT</p>
           <p>2: {t("Verifica que la dirección pertenezca a la red seleccionada antes de confirmar.")}</p>
+          {withdrawalDayPolicy?.allowedDaysLabel && (
+            <p>3: {t("Días disponibles para tu nivel")}: <b>{t(withdrawalDayPolicy.allowedDaysLabel)}</b></p>
+          )}
         </div>
       </section>
     </div>

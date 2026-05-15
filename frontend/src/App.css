@@ -13183,6 +13183,12 @@ button:hover,
   color: #ffd36a;
 }
 
+.withdraw-exact-note.success {
+  background: rgba(46, 204, 113, 0.12);
+  border-color: rgba(46, 204, 113, 0.28);
+  color: #b7f7cf;
+}
+
 .withdraw-exact-note-simple {
   margin: 0 0 14px;
   font-size: 15px;

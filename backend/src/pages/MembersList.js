@@ -1,13 +1,10 @@
 import React, { useEffect, useState } from "react";
-import { FiArrowLeft, FiCpu, FiDatabase, FiUsers } from "react-icons/fi";
+import { FiArrowLeft, FiCreditCard, FiUser, FiUsers } from "react-icons/fi";
 import { useNavigate, useParams } from "react-router-dom";
 import { getReferralMembers } from "../services/authService";
 
 function formatMoney(value) {
-  return Number(value || 0).toLocaleString("en-US", {
-    minimumFractionDigits: 2,
-    maximumFractionDigits: 2,
-  });
+  return Number(value || 0).toFixed(2);
 }
 
 export default function MembersList() {
@@ -33,14 +30,14 @@ export default function MembersList() {
   }, [level]);
 
   return (
-    <div className="page members-page members-page-v5">
+    <div className="page members-page members-page-v4">
       <div className="recharge-header">
         <button className="icon-btn" onClick={() => navigate(-1)}>
           <FiArrowLeft />
         </button>
 
         <div>
-          <div className="eyebrow">NIVEL {level}</div>
+          <div className="eyebrow">Nivel {level}</div>
           <h2>Lista de miembros</h2>
         </div>
 
@@ -51,33 +48,37 @@ export default function MembersList() {
 
       {!loading &&
         members.map((member) => {
-          const investedAmount = Number(member.investedAmount || 0);
-          const isActive = Boolean(member.isActive);
+          const purchasedVipLevel = Number(
+            member.purchasedVipLevel || member.vipLevel || 0
+          );
+
+          const purchasedVipPrice = Number(member.purchasedVipPrice || 0);
+          const totalVipRecharge = Number(
+            member.totalVipRecharge || purchasedVipPrice || 0
+          );
 
           return (
-            <div className="member-card member-card-tech" key={member.id}>
-              <div className="member-tech-left">
-                <div className="member-avatar member-avatar-tech">
-                  <FiCpu />
+            <div className="member-card member-card-compact" key={member.id}>
+              <div className="member-compact-left">
+                <div className="member-avatar member-avatar-usericon compact">
+                  <FiUser />
                 </div>
 
-                <div className="member-tech-info">
+                <div className="member-compact-info">
                   <h3>{member.email}</h3>
 
-                  <div className="member-tech-line">
-                    <span
-                      className={`member-status-chip ${
-                        isActive ? "active" : "inactive"
-                      }`}
-                    >
-                      {isActive ? "Activo" : "Inactivo"}
+                  <div className="member-compact-line">
+                    <span className="member-tag compact">
+                      {purchasedVipLevel > 0
+                        ? `VIP${purchasedVipLevel}`
+                        : "Sin VIP"}
                     </span>
 
                     <span className="member-dot">•</span>
 
-                    <span className="member-invest-chip">
-                      <FiDatabase />
-                      {formatMoney(investedAmount)} USDT
+                    <span className="member-invest-compact">
+                      <FiCreditCard />
+                      {formatMoney(totalVipRecharge)} USDT
                     </span>
 
                     <span className="member-dot">•</span>
@@ -89,14 +90,16 @@ export default function MembersList() {
                 </div>
               </div>
 
-              <div className="member-tech-right">
+              <div className="member-compact-right">
                 <span className="member-direct-compact" title="Subordinados directos">
                   <FiUsers />
                   {member.directSubordinates}
                 </span>
 
-                <span className="member-plan-price tech-amount">
-                  {formatMoney(investedAmount)} USDT
+                <span className="member-plan-price">
+                  {purchasedVipLevel > 0
+                    ? `${formatMoney(purchasedVipPrice)} USDT`
+                    : "0.00 USDT"}
                 </span>
               </div>
             </div>

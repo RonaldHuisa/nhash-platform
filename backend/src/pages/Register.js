@@ -1,6 +1,6 @@
 import React, { useState } from "react";
 import { Link, useNavigate, useSearchParams } from "react-router-dom";
-import { FiEye, FiEyeOff, FiMail, FiLock, FiHash, FiCpu } from "react-icons/fi";
+import { FiEye, FiEyeOff, FiMail, FiLock, FiHash } from "react-icons/fi";
 import { registerUser, saveSession } from "../services/authService";
 
 export default function Register() {
@@ -17,7 +17,7 @@ export default function Register() {
   const [error, setError] = useState("");
 
   const [searchParams] = useSearchParams();
-  const referralFromUrl = searchParams.get("ref") || "";
+  const referralFromUrl = searchParams.get("ref") || "322328";
 
   const [referralCode, setReferralCode] = useState(referralFromUrl);
 
@@ -68,11 +68,6 @@ export default function Register() {
       return;
     }
 
-    if (!referralCode.trim()) {
-      setError("El código de invitación es obligatorio.");
-      return;
-    }
-
     setLoading(true);
 
     try {
@@ -94,12 +89,12 @@ export default function Register() {
 
   return (
     <div className="auth-page">
-      <div className="auth-logo-block nicehash-auth-brand">
-        <div className="auth-logo auth-logo-chip">
-          <FiCpu />
+      <div className="auth-logo-block">
+        <div className="auth-logo auth-logo-image">
+          <img src="/luven_favicon.ico" alt="Luven" />
         </div>
-        <h1>Crear cuenta NiceHash</h1>
-        <p>Activa tu acceso a la simulación minera y comienza a construir potencia de hash.</p>
+        <h1>Comienza ahora</h1>
+        <p>Crea tu cuenta y accede al panel de inmediato.</p>
       </div>
 
       <div className="auth-card">
@@ -165,8 +160,8 @@ export default function Register() {
               className="auth-input"
               value={referralCode}
               onChange={(e) => setReferralCode(e.target.value)}
-              placeholder="Ingresa tu código de invitación"
-              required
+              placeholder="Código de invitación"
+              readOnly
             />
           </div>
 

@@ -3,26 +3,10 @@ import { FiCheckCircle, FiRefreshCw } from "react-icons/fi";
 import {
     approveAdminWithdrawal,
     getAdminPendingWithdrawals,
-    getAdminStatus,
-    getAdminWithdrawals,
 } from "../services/authService";
 
-function money(value, decimals = 2) {
-    return Number(value || 0).toFixed(decimals);
-}
-
-function statusLabel(status) {
-    if (status === "paid") return "Pagado";
-    if (status === "processing_auto") return "Procesando auto";
-    if (status === "pending") return "Pendiente";
-    if (status === "approved") return "Aprobado";
-    return status || "Pendiente";
-}
-
 export default function AdminWithdrawals() {
-    const [pendingWithdrawals, setPendingWithdrawals] = useState([]);
-    const [allWithdrawals, setAllWithdrawals] = useState([]);
-    const [stats, setStats] = useState(null);
+    const [withdrawals, setWithdrawals] = useState([]);
     const [loading, setLoading] = useState(true);
     const [processingId, setProcessingId] = useState(null);
     const [toast, setToast] = useState("");
@@ -39,15 +23,9 @@ export default function AdminWithdrawals() {
         try {
             setLoading(true);
 
-            const [pendingData, allData, statusData] = await Promise.all([
-                getAdminPendingWithdrawals(),
-                getAdminWithdrawals(),
-                getAdminStatus(),
-            ]);
+            const data = await getAdminPendingWithdrawals();
 
-            setPendingWithdrawals(pendingData.withdrawals || []);
-            setAllWithdrawals(allData.withdrawals || []);
-            setStats(statusData || null);
+            setWithdrawals(data.withdrawals || []);
         } catch (error) {
             showToast(error.message);
         } finally {
@@ -73,16 +51,15 @@ export default function AdminWithdrawals() {
 
             showToast(`Retiro pagado. TX: ${data.txHash}`);
 
-            await loadWithdrawals();
+            setWithdrawals((prev) =>
+                prev.filter((item) => item.id !== withdrawalId)
+            );
         } catch (error) {
             showToast(error.message);
         } finally {
             setProcessingId(null);
         }
     };
-
-    const totals = stats?.totals || {};
-    const counts = stats?.counts || {};
 
     return (
         <div className="page admin-page">
@@ -95,7 +72,7 @@ export default function AdminWithdrawals() {
             <div className="admin-header">
                 <div>
                     <h1>Panel Admin</h1>
-                    <p>Retiros automáticos y pendientes</p>
+                    <p>Retiros pendientes por aprobar</p>
                 </div>
 
                 <button type="button" onClick={loadWithdrawals}>
@@ -104,44 +81,17 @@ export default function AdminWithdrawals() {
                 </button>
             </div>
 
-            <div className="admin-info-grid">
-                <div>
-                    <span>Recargado hoy</span>
-                    <strong>{money(totals.depositsTodayUsdt)} USDT</strong>
-                </div>
-
-                <div>
-                    <span>Retirado hoy</span>
-                    <strong>{money(totals.paidWithdrawalsTodayUsdt)} USDT</strong>
-                </div>
-
-                <div>
-                    <span>Pendiente por pagar</span>
-                    <strong>{money(totals.pendingWithdrawalsUsdt)} USDT</strong>
-                </div>
-
-                <div>
-                    <span>Retiros automáticos</span>
-                    <strong>{counts.autoPaidWithdrawals || 0}</strong>
-                </div>
-            </div>
-
             {loading && <div className="panel">Cargando retiros...</div>}
 
-            {!loading && (
-                <>
-                    <div className="admin-section-title">
-                        <h2>Aprobar</h2>
-                        <p>Solo retiros mayores a 20 USDT o pagos automáticos fallidos.</p>
-                    </div>
+            {!loading && withdrawals.length === 0 && (
+                <div className="panel admin-empty">
+                    No hay retiros pendientes.
+                </div>
+            )}
 
-                    {pendingWithdrawals.length === 0 && (
-                        <div className="panel admin-empty">
-                            No hay retiros pendientes.
-                        </div>
-                    )}
-
-                    {pendingWithdrawals.map((item) => (
+            {!loading &&
+                withdrawals.map((item) => {
+                    return (
                         <div className="admin-withdraw-card" key={item.id}>
                             <div className="admin-card-top">
                                 <div>
@@ -154,25 +104,30 @@ export default function AdminWithdrawals() {
 
                             <div className="admin-info-grid">
                                 <div>
-                                    <span>Red</span>
-                                    <strong>{item.network || "BEP20-USDT"}</strong>
-                                </div>
-
-                                <div>
                                     <span>Solicitado</span>
-                                    <strong>{money(item.amount_requested, 6)} USDT</strong>
+                                    <strong>{Number(item.amount_requested).toFixed(6)} USDT</strong>
                                 </div>
 
                                 <div>
                                     <span>Comisión {Number(item.fee_percent).toFixed(0)}%</span>
-                                    <strong>{money(item.fee_amount, 6)} USDT</strong>
+                                    <strong>{Number(item.fee_amount).toFixed(6)} USDT</strong>
                                 </div>
 
                                 <div>
                                     <span>Debe recibir</span>
                                     <strong className="amount-positive">
-                                        {money(item.amount_to_receive, 6)} USDT
+                                        {Number(item.amount_to_receive).toFixed(6)} USDT
                                     </strong>
+                                </div>
+
+                                <div>
+                                    <span>Retiros pagados</span>
+                                    <strong>{item.paid_withdrawals_count}</strong>
+                                </div>
+
+                                <div>
+                                    <span>Total solicitudes</span>
+                                    <strong>{item.total_withdrawals_count}</strong>
                                 </div>
 
                                 <div>
@@ -186,13 +141,6 @@ export default function AdminWithdrawals() {
                                 <p>{item.withdrawal_address}</p>
                             </div>
 
-                            {item.admin_note && (
-                                <div className="admin-address-box">
-                                    <span>Nota</span>
-                                    <p>{item.admin_note}</p>
-                                </div>
-                            )}
-
                             <button
                                 className="admin-approve-btn"
                                 type="button"
@@ -203,46 +151,8 @@ export default function AdminWithdrawals() {
                                 {processingId === item.id ? "Pagando..." : "Aprobar y pagar"}
                             </button>
                         </div>
-                    ))}
-
-                    <div className="admin-section-title">
-                        <h2>Log de retiros</h2>
-                        <p>Últimos retiros solicitados, automáticos y pagados.</p>
-                    </div>
-
-                    {allWithdrawals.slice(0, 30).map((item) => (
-                        <div className="admin-withdraw-card compact" key={`log-${item.id}`}>
-                            <div className="admin-card-top">
-                                <div>
-                                    <h3>{item.email}</h3>
-                                    <p>{item.network || "BEP20-USDT"} · {new Date(item.created_at).toLocaleString()}</p>
-                                </div>
-
-                                <span className={item.status === "paid" ? "status-paid" : "status-pending"}>
-                                    {statusLabel(item.status)}
-                                </span>
-                            </div>
-
-                            <div className="admin-info-grid">
-                                <div>
-                                    <span>Solicitado</span>
-                                    <strong>{money(item.amount_requested, 6)} USDT</strong>
-                                </div>
-
-                                <div>
-                                    <span>Recibió</span>
-                                    <strong>{money(item.amount_to_receive, 6)} USDT</strong>
-                                </div>
-
-                                <div>
-                                    <span>TX</span>
-                                    <strong>{item.tx_hash ? `${item.tx_hash.slice(0, 10)}...` : "-"}</strong>
-                                </div>
-                            </div>
-                        </div>
-                    ))}
-                </>
-            )}
+                    );
+                })}
         </div>
     );
 }

@@ -3,13 +3,10 @@ const { ensureHashRewardsSchema, getHashBonusPercent } = require("./hashRewardsS
 
 const MINING_PLANS = [
   { level: 1, name: "NiceHash-1", minAmount: 5, maxAmount: 150, dailyPercent: 3.0, durationHours: 24, windowDays: 120 },
-  { level: 2, name: "NiceHash-2", minAmount: 150, maxAmount: 400, dailyPercent: 3.25, durationHours: 24, windowDays: 120 },
-  { level: 3, name: "NiceHash-3", minAmount: 400, maxAmount: 800, dailyPercent: 3.5, durationHours: 24, windowDays: 120 },
-  { level: 4, name: "NiceHash-4", minAmount: 800, maxAmount: 1200, dailyPercent: 3.75, durationHours: 24, windowDays: 120 },
-  { level: 5, name: "NiceHash-5", minAmount: 1200, maxAmount: 1600, dailyPercent: 4.0, durationHours: 24, windowDays: 120 },
-  { level: 6, name: "NiceHash-6", minAmount: 1600, maxAmount: 2200, dailyPercent: 4.25, durationHours: 24, windowDays: 120 },
-  { level: 7, name: "NiceHash-7", minAmount: 2200, maxAmount: 3000, dailyPercent: 4.5, durationHours: 24, windowDays: 120 },
-  { level: 8, name: "NiceHash-8", minAmount: 3000, maxAmount: 4500, dailyPercent: 5.0, durationHours: 24, windowDays: 120 },
+  { level: 2, name: "NiceHash-2", minAmount: 150, maxAmount: 350, dailyPercent: 3.25, durationHours: 24, windowDays: 120 },
+  { level: 3, name: "NiceHash-3", minAmount: 350, maxAmount: 800, dailyPercent: 3.5, durationHours: 24, windowDays: 120 },
+  { level: 4, name: "NiceHash-4", minAmount: 800, maxAmount: 1500, dailyPercent: 3.75, durationHours: 24, windowDays: 120 },
+  { level: 5, name: "NiceHash-5", minAmount: 1500, maxAmount: 4000, dailyPercent: 4.0, durationHours: 24, windowDays: 120 },
 ];
 
 function getAuthUserId(req) {
@@ -99,6 +96,12 @@ async function ensureMiningSchema(clientOrPool = pool) {
       [plan.level, plan.name, plan.minAmount, plan.maxAmount, plan.dailyPercent, plan.durationHours, plan.windowDays]
     );
   }
+
+  await clientOrPool.query(`
+    UPDATE mining_plans
+    SET is_active = false, updated_at = CURRENT_TIMESTAMP
+    WHERE level > 5
+  `);
 }
 
 async function findUserFromAuth(clientOrPool, authUser) {

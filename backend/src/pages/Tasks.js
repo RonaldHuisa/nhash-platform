@@ -1,243 +1,287 @@
-import React, { useCallback, useEffect, useMemo, useRef, useState } from "react";
-import { FiCpu, FiZap, FiTrendingUp, FiRefreshCw, FiRotateCw } from "react-icons/fi";
+import React, { useCallback, useEffect, useRef, useState } from "react";
 import { useNavigate } from "react-router-dom";
-import { getMiningStatus, claimMiningReward } from "../services/authService";
+import { FiClock } from "react-icons/fi";
+import BottomNav from "../components/BottomNav";
+import { getTasksDashboard, completeVipTask } from "../services/authService";
 import { useI18n } from "../i18n/I18nContext";
 
-function formatUsdt(value, decimals = 2) {
-  return Number(value || 0).toLocaleString("en-US", {
-    minimumFractionDigits: decimals,
-    maximumFractionDigits: decimals,
-  });
-}
-
 function formatCountdown(ms) {
-  const safeMs = Math.max(Number(ms || 0), 0);
-  const totalSeconds = Math.floor(safeMs / 1000);
+  if (ms <= 0) return "00:00:00";
+
+  const totalSeconds = Math.floor(ms / 1000);
   const hours = Math.floor(totalSeconds / 3600);
   const minutes = Math.floor((totalSeconds % 3600) / 60);
   const seconds = totalSeconds % 60;
-  return [hours, minutes, seconds].map((item) => String(item).padStart(2, "0")).join(":");
+
+  return `${String(hours).padStart(2, "0")}:${String(minutes).padStart(
+    2,
+    "0"
+  )}:${String(seconds).padStart(2, "0")}`;
 }
 
-function getProgress(mining, now) {
-  if (!mining?.cycleStartedAt || !mining?.cycleEndsAt) return 0;
-  const start = new Date(mining.cycleStartedAt).getTime();
-  const end = new Date(mining.cycleEndsAt).getTime();
-  const total = Math.max(end - start, 1);
-  const elapsed = Math.max(now - start, 0);
-  return Math.min(100, Math.max(0, (elapsed / total) * 100));
+function formatAmount(value) {
+  return Number(value || 0).toFixed(2);
 }
 
-function getRemaining(mining, now) {
-  if (!mining?.cycleEndsAt) return 0;
-  return Math.max(new Date(mining.cycleEndsAt).getTime() - now, 0);
+function getTaskRemainingMs(task, now) {
+  if (!task?.nextAvailableAt) return 0;
+  return new Date(task.nextAvailableAt).getTime() - now;
 }
 
 export default function Tasks() {
   const navigate = useNavigate();
   const { t } = useI18n();
-  const messageTimer = useRef(null);
+  const messageTimerRef = useRef(null);
 
   const [data, setData] = useState(null);
+  const [activeTab, setActiveTab] = useState("available");
   const [loading, setLoading] = useState(true);
-  const [claiming, setClaiming] = useState(false);
-  const [activeTab, setActiveTab] = useState("claim");
+  const [processingTaskId, setProcessingTaskId] = useState(null);
   const [message, setMessage] = useState("");
   const [now, setNow] = useState(Date.now());
 
-  const loadMining = useCallback(async () => {
+  const loadTasks = useCallback(async () => {
     try {
       setLoading(true);
-      const result = await getMiningStatus();
+      const result = await getTasksDashboard();
       setData(result);
     } catch (error) {
-      setMessage(error.message || t("Error al cargar minería."));
+      setMessage(error.message || t("Error al cargar misiones."));
     } finally {
       setLoading(false);
     }
   }, [t]);
 
   useEffect(() => {
-    loadMining();
-  }, [loadMining]);
+    loadTasks();
+  }, [loadTasks]);
 
   useEffect(() => {
-    const interval = setInterval(() => setNow(Date.now()), 1000);
+    const interval = setInterval(() => {
+      setNow(Date.now());
+    }, 1000);
+
     return () => clearInterval(interval);
   }, []);
 
   useEffect(() => {
+    if (!data?.tasks?.length) return undefined;
+
+    const hasFinishedCooldown = data.tasks.some((task) => {
+      if (task.status !== "cooldown") return false;
+      return getTaskRemainingMs(task, Date.now()) <= 0;
+    });
+
+    if (hasFinishedCooldown) {
+      const timeout = setTimeout(loadTasks, 800);
+      return () => clearTimeout(timeout);
+    }
+
+    return undefined;
+  }, [now, data?.tasks, loadTasks]);
+
+  useEffect(() => {
     if (!message) return undefined;
-    if (messageTimer.current) clearTimeout(messageTimer.current);
-    messageTimer.current = setTimeout(() => setMessage(""), 3600);
+
+    if (messageTimerRef.current) {
+      clearTimeout(messageTimerRef.current);
+    }
+
+    messageTimerRef.current = setTimeout(() => {
+      setMessage("");
+    }, 3200);
+
     return () => {
-      if (messageTimer.current) clearTimeout(messageTimer.current);
+      if (messageTimerRef.current) {
+        clearTimeout(messageTimerRef.current);
+      }
     };
   }, [message]);
 
-  const mining = data?.mining;
-  const plan = mining?.plan;
-  const progress = useMemo(() => getProgress(mining, now), [mining, now]);
-  const remainingMs = useMemo(() => getRemaining(mining, now), [mining, now]);
-  const isClaimable = mining?.status === "active" && remainingMs <= 0;
+  const tasks = data?.tasks ?? [];
+  const availableTasks = tasks.filter((task) => task.status === "available");
+  const cooldownTasks = tasks.filter((task) => task.status === "cooldown");
+  const currentList = activeTab === "available" ? availableTasks : cooldownTasks;
 
-  useEffect(() => {
-    if (mining?.status === "active" && remainingMs <= 0) {
-      const timeout = setTimeout(loadMining, 800);
-      return () => clearTimeout(timeout);
+  const handleCompleteTask = async (taskId) => {
+    if (!taskId) {
+      setMessage(t("Error: esta misión no tiene ID válido."));
+      return;
     }
-    return undefined;
-  }, [remainingMs, mining?.status, loadMining]);
 
-  const handleClaim = async () => {
-    if (!isClaimable || claiming) return;
     try {
-      setClaiming(true);
-      const result = await claimMiningReward();
-      setMessage(result.message || t("Recompensa reclamada."));
-      setData(result.dashboard || data);
-      setActiveTab("history");
+      setProcessingTaskId(taskId);
+      setMessage("");
+
+      const result = await completeVipTask(taskId);
+
+      setMessage(result.message || t("Misión completada correctamente."));
+      await loadTasks();
+      setActiveTab("cooldown");
     } catch (error) {
-      setMessage(error.message || t("Error al reclamar recompensa."));
-      await loadMining();
+      setMessage(error.message || t("Error al completar misión."));
+      await loadTasks();
     } finally {
-      setClaiming(false);
+      setProcessingTaskId(null);
     }
   };
 
+  const renderTaskTitle = (task) => {
+    const rawTitle = task.title || task.packageName || `TIGGO AI ${task.vipLevel || ""}`;
+    return t(String(rawTitle || "Misión TIGGO AI"));
+  };
+
+  const balance = formatAmount(data?.withdrawableBalanceUsdt ?? 0);
+  const available = Number(data?.availableTasks ?? availableTasks.length);
+  const total = Number(data?.totalTasks ?? tasks.length);
+  const cooldown = Number(data?.cooldownTasks ?? cooldownTasks.length);
+
+  const nearestCooldown = cooldownTasks
+    .map((task) => getTaskRemainingMs(task, now))
+    .filter((ms) => ms > 0)
+    .sort((a, b) => a - b)[0];
+
+  const globalCountdown = nearestCooldown ? formatCountdown(nearestCooldown) : "00:00:00";
+
   return (
-    <div className="page mining-page">
-      <header className="mining-header">
-        <div className="mining-brand">
-          <div className="mining-logo"><FiCpu /></div>
+    <div className="page tasks-clean-page">
+      <div className="tasks-clean-header">
+        <div className="tasks-clean-logo">
+          <img src="/luven_favicon.ico" alt="TIGGO" />
+        </div>
+
+        <h1 className="tasks-clean-title">{t("Misiones")}</h1>
+      </div>
+
+      <section className="panel tasks-clean-card">
+        <div className="tasks-clean-top">
+          <div className="tasks-clean-balance">
+            <span>{t("Balance retirable")}</span>
+            <strong>{balance}</strong>
+          </div>
+
+          <button
+            type="button"
+            className="tasks-clean-recharge"
+            onClick={() => navigate("/recharge")}
+          >
+            {t("Recargar")}
+          </button>
+        </div>
+
+        <div className="tasks-clean-stats">
           <div>
-            <strong>{t("NiceHash")}</strong>
-            <span>{t("Simulación de hash")}</span>
+            <strong>{available}</strong>
+            <span>{t("Disponibles")}</span>
+          </div>
+
+          <div>
+            <strong>{total}</strong>
+            <span>{t("Activas")}</span>
+          </div>
+
+          <div>
+            <strong>{cooldown}</strong>
+            <span>{t("En espera")}</span>
           </div>
         </div>
-        <button className="mining-small-btn" type="button" onClick={loadMining}>
-          <FiRefreshCw />
-        </button>
-      </header>
 
+        <div className="tasks-clean-countdown">
+          <strong>{globalCountdown}</strong>
+          <span>
+            <FiClock />
+            {t("Próxima misión disponible")}
+          </span>
+        </div>
 
-      <section className="mining-main-card">
-        {loading ? (
-          <div className="mining-loading">{t("Cargando minería...")}</div>
-        ) : (
-          <>
-            <div className="mining-level-row mining-level-row-clean">
-              <div className="mining-current-level mining-current-level-only">
-                <span>{t("Nivel actual")}</span>
-              </div>
-              <button className="mining-info-pill" type="button" onClick={() => navigate("/vip")}>
-                {t("Información de nivel")}
-              </button>
+        <div className="tasks-clean-tabs">
+          <button
+            type="button"
+            className={`tasks-clean-tab ${
+              activeTab === "available" ? "active" : ""
+            }`}
+            onClick={() => setActiveTab("available")}
+          >
+            {t("Disponibles")}
+          </button>
+
+          <button
+            type="button"
+            className={`tasks-clean-tab ${
+              activeTab === "cooldown" ? "active" : ""
+            }`}
+            onClick={() => setActiveTab("cooldown")}
+          >
+            {t("En espera")}
+          </button>
+        </div>
+
+        <div className="tasks-clean-list">
+          {loading && <div className="tasks-clean-empty">{t("Cargando misiones...")}</div>}
+
+          {!loading && currentList.length === 0 && (
+            <div className="tasks-clean-empty">
+              {activeTab === "available"
+                ? t("No tienes misiones disponibles. Compra un TIGGO AI activo o espera que termine el contador.")
+                : t("No tienes misiones en espera por ahora.")}
             </div>
+          )}
 
-            <div className="mining-machine">
-              <div className="mining-machine-glow" />
-              <div className="mining-machine-title" data-no-translate="true">{plan?.name || "Mining"}</div>
-              <div className="mining-core mining-core-elegant">
-                <FiCpu />
-              </div>
-              <div className="mining-machine-plan">
-                <span>{t("Módulo activo de minería")}</span>
-              </div>
-              <div className="mining-rays" />
-            </div>
+          {!loading &&
+            currentList.map((task) => {
+              const taskId = task.id || task.vipPurchaseId || task.vip_purchase_id;
+              const remainingMs = getTaskRemainingMs(task, now);
+              const taskCountdown = formatCountdown(remainingMs);
+              const isAvailable = task.status === "available" || remainingMs <= 0;
 
-            <div className="mining-metrics-grid">
-              <div>
-                <span>{t("Tasa de hash")}</span>
-                <strong data-no-translate="true">{formatUsdt(mining?.hashRate || 0)} GH/s</strong>
-              </div>
-              <div>
-                <span>{t("Ingresos mineros")}</span>
-                <strong className="gold-text" data-no-translate="true">+{formatUsdt(mining?.dailyPercent || 0, 2)}%</strong>
-              </div>
-              <div>
-                <span>{t("A diario")}</span>
-                <strong data-no-translate="true">{formatUsdt(mining?.dailyReward || 0)} USDT</strong>
-              </div>
-              <div>
-                <span>{isClaimable ? t("Listo para reclamar") : t("Finaliza en")}</span>
-                <strong data-no-translate={!isClaimable}>{isClaimable ? t("Reclamar") : formatCountdown(remainingMs)}</strong>
-              </div>
-            </div>
+              return (
+                <article
+                  className="tasks-clean-item"
+                  key={taskId || `${task.vipLevel}-${task.rewardUsdt}`}
+                >
+                  <div>
+                    <h3>{renderTaskTitle(task)}</h3>
 
-            <div className="mining-progress-wrap">
-              <div className="mining-progress-top">
-                <span>{t("Progreso de hash")}</span>
-                <strong data-no-translate="true">{progress.toFixed(2)}%</strong>
-              </div>
-              <div className="mining-progress-bar">
-                <span data-no-translate="true" style={{ width: `${progress}%` }} />
-              </div>
-              <small className="mining-progress-note">{t("El progreso avanza durante las 24 horas del ciclo de minería.")}</small>
-            </div>
+                    <p>
+                      {t("Ganancia por misión:")} {" "}
+                      <strong>
+                        {formatAmount(task.taskRewardUsdt || task.rewardUsdt || task.reward_usdt)} USDT
+                      </strong>
+                    </p>
 
-            <div className="mining-action-row">
-              <button className="mining-primary-btn" type="button" onClick={() => navigate("/recharge")}>
-                <FiTrendingUp />
-                {t("Aumentar la tasa de hash")}
-              </button>
-              <button className="mining-secondary-btn" type="button" onClick={() => navigate("/reinvest")}>
-                <FiRotateCw />
-                {t("Re-invertir")}
-              </button>
-            </div>
-          </>
-        )}
+                    <p>
+                      {t("Tiempo de espera:")} {" "}
+                      <strong>{task.cooldownLabel || `${task.cooldownMinutes} min`}</strong>
+                    </p>
+
+                    {!isAvailable && (
+                      <p>
+                        {t("Disponible en:")} <strong>{taskCountdown}</strong>
+                      </p>
+                    )}
+                  </div>
+
+                  {isAvailable ? (
+                    <button
+                      type="button"
+                      className="tasks-clean-complete-btn"
+                      disabled={!taskId || processingTaskId === taskId}
+                      onClick={() => handleCompleteTask(taskId)}
+                    >
+                      {processingTaskId === taskId ? t("Procesando...") : t("Completar")}
+                    </button>
+                  ) : (
+                    <span className="tasks-clean-completed">{taskCountdown}</span>
+                  )}
+                </article>
+              );
+            })}
+        </div>
       </section>
 
-      <section className="mining-register-section">
-        <h2>{t("Registro de minería")}</h2>
-        <div className="mining-tabs mining-tabs-two">
-          <button className={activeTab === "claim" ? "active" : ""} type="button" onClick={() => setActiveTab("claim")}>{t("Reclamar")}</button>
-          <button className={activeTab === "history" ? "active" : ""} type="button" onClick={() => setActiveTab("history")}>{t("Afirmado")}</button>
-        </div>
+      {message && <div className="tasks-clean-toast">{message}</div>}
 
-        {message && <div className="mining-toast">{message}</div>}
-
-        {activeTab === "claim" && (
-          <div className="mining-claim-card">
-            <div>
-              <span data-no-translate="true">{plan?.name || t("Sin minería activa")}</span>
-              <strong data-no-translate="true">+{formatUsdt(mining?.dailyReward || 0)} USDT</strong>
-              <small data-no-translate={!isClaimable}>{isClaimable ? t("Ciclo terminado. Reclama tu bono.") : `${t("Cargando hash")}: ${formatCountdown(remainingMs)}`}</small>
-            </div>
-            <button type="button" disabled={!isClaimable || claiming} onClick={handleClaim}>
-              <FiZap />
-              {claiming ? t("Procesando...") : t("Reclamar")}
-            </button>
-          </div>
-        )}
-
-        {activeTab === "history" && (
-          <div className="mining-history-list">
-            {(data?.claims || []).length === 0 && <div className="mining-empty">{t("Todavía no tienes recompensas reclamadas.")}</div>}
-            {(data?.claims || []).map((claim) => (
-              <article key={claim.id} className="mining-history-item">
-                <div>
-                  <strong data-no-translate="true">{claim.planName}</strong>
-                  <span data-no-translate="true">{new Date(claim.claimedAt).toLocaleString()}</span>
-                </div>
-                <b data-no-translate="true">+{formatUsdt(claim.rewardAmount)} USDT</b>
-              </article>
-            ))}
-          </div>
-        )}
-      </section>
-
-      <button className="mining-invite-banner mining-invite-banner-bottom" type="button" onClick={() => navigate("/rewards")}>
-        <div className="mining-invite-banner-icon"><FiTrendingUp /></div>
-        <div>
-          <strong>{t("Invita para aumentar tu porcentaje de hash")}</strong>
-          <span>{t("Suma más bonus hash y mejora tus ingresos mineros.")}</span>
-        </div>
-      </button>
+      <BottomNav />
     </div>
   );
 }

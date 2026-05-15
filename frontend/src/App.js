@@ -15,6 +15,7 @@ import Transactions from "./pages/Transactions";
 import AdminWithdrawals from "./pages/AdminWithdrawals";
 import AdminStatus from "./pages/AdminStatus";
 import AdminDeposits from "./pages/AdminDeposits";
+import AdminSecurity from "./pages/AdminSecurity";
 import MembersList from "./pages/MembersList";
 import Tasks from "./pages/Tasks";
 import HashRewards from "./pages/HashRewards";
@@ -51,6 +52,7 @@ function ProtectedLayout() {
         <Route path="/admin/withdrawals" element={<AdminWithdrawals />} />
         <Route path="/admin/status" element={<AdminStatus />} />
         <Route path="/admin/deposits" element={<AdminDeposits />} />
+        <Route path="/admin/security" element={<AdminSecurity />} />
         <Route path="/members/:level" element={<MembersList />} />
         <Route path="/tasks" element={<Tasks />} />
         <Route path="/rewards" element={<HashRewards />} />

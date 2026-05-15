@@ -139,6 +139,21 @@ export default function AdminStatus() {
             </article>
           </section>
 
+
+          <section className="panel admin-status-section">
+            <div className="admin-status-section-title admin-status-section-title-action">
+              <FiShield />
+              <div>
+                <h3>Seguridad / Antifraude</h3>
+                <p>Revisa IPs repetidas, usuarios sospechosos y cuentas restringidas.</p>
+              </div>
+              <button className="admin-status-small-action" type="button" onClick={() => navigate("/admin/security")}>
+                <FiShield />
+                Abrir
+              </button>
+            </div>
+          </section>
+
           <section className="panel admin-status-section">
             <div className="admin-status-section-title">
               <FiShield />

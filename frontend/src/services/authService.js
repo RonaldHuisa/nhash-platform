@@ -430,3 +430,50 @@ export function changePassword(payload) {
     body: JSON.stringify(payload),
   });
 }
+
+export function getAdminSecurityUsers() {
+  return request("/admin/security/users", { method: "GET" });
+}
+
+export function getAdminRepeatedIps() {
+  return request("/admin/security/repeated-ips", { method: "GET" });
+}
+
+export function getAdminSecurityEvents(userId) {
+  return request(`/admin/security/users/${userId}/events`, { method: "GET" });
+}
+
+export function markAdminUserSuspicious(userId, reason) {
+  return request(`/admin/security/users/${userId}/mark-suspicious`, {
+    method: "POST",
+    body: JSON.stringify({ reason }),
+  });
+}
+
+export function clearAdminUserSuspicious(userId, reason) {
+  return request(`/admin/security/users/${userId}/clear-suspicious`, {
+    method: "POST",
+    body: JSON.stringify({ reason }),
+  });
+}
+
+export function banAdminUser(userId, reason) {
+  return request(`/admin/security/users/${userId}/ban`, {
+    method: "POST",
+    body: JSON.stringify({ reason }),
+  });
+}
+
+export function unbanAdminUser(userId, reason) {
+  return request(`/admin/security/users/${userId}/unban`, {
+    method: "POST",
+    body: JSON.stringify({ reason }),
+  });
+}
+
+export function markAdminIpSuspicious(ip, reason) {
+  return request(`/admin/security/ips/${encodeURIComponent(ip)}/mark-suspicious`, {
+    method: "POST",
+    body: JSON.stringify({ reason }),
+  });
+}

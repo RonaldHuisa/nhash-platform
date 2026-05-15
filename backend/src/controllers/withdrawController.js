@@ -12,7 +12,7 @@ const { ensureNotBanned, logSecurityEvent } = require("../services/securityServi
 
 const WITHDRAW_FEE_PERCENT = 8;
 const MIN_WITHDRAW_USDT = 1;
-const AUTO_WITHDRAW_MAX_USDT = Number(process.env.AUTO_WITHDRAW_MAX_USDT || 20);
+const AUTO_WITHDRAW_MAX_USDT = 100;
 
 
 const WITHDRAW_DAY_NAMES = {
@@ -847,7 +847,7 @@ async function createWithdrawRequest(req, res) {
 
         if (!shouldAutoPay) {
             return res.status(201).json({
-                message: `Solicitud de retiro creada correctamente. Los retiros mayores a ${AUTO_WITHDRAW_MAX_USDT} USDT quedan pendientes de aprobación.`,
+                message: "Retiro solicitado con éxito.",
                 withdrawal: createdWithdrawal,
                 currentWithdrawable: newBalanceResult.rows[0].withdrawable_usdt,
                 withdrawalAddress: newBalanceResult.rows[0].withdrawal_address,
@@ -874,7 +874,7 @@ async function createWithdrawRequest(req, res) {
             await markAutoWithdrawalPaid(createdWithdrawal.id, userId, payment, createdWithdrawal);
 
             return res.status(201).json({
-                message: "Retiro automático pagado correctamente.",
+                message: "Retiro solicitado con éxito.",
                 withdrawal: {
                     ...createdWithdrawal,
                     status: "paid",
@@ -900,8 +900,7 @@ async function createWithdrawRequest(req, res) {
             await markAutoWithdrawalFailed(createdWithdrawal.id, paymentError.message);
 
             return res.status(201).json({
-                message: "Solicitud creada. El pago automático no pudo completarse y quedó pendiente para aprobación manual.",
-                detail: paymentError.message,
+                message: "Retiro solicitado con éxito.",
                 withdrawal: {
                     ...createdWithdrawal,
                     status: "pending",

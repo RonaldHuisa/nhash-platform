@@ -129,10 +129,13 @@ async function getActiveDirectInvitesCount(client, userId) {
         WHERE inv.referred_by_id = $1
         AND EXISTS (
             SELECT 1
-            FROM vip_purchases vp
-            WHERE vp.user_id = inv.id
-              AND vp.status = 'active'
-              AND vp.expires_at > NOW()
+            FROM mining_accounts ma
+            JOIN mining_plans mp ON mp.id = ma.current_plan_id
+            WHERE ma.user_id = inv.id
+              AND ma.status = 'active'
+              AND ma.current_plan_id IS NOT NULL
+              AND COALESCE(ma.invested_amount, 0) >= 5
+              AND mp.is_active = true
         )
         `,
         [userId]
@@ -146,11 +149,12 @@ async function getWithdrawalPolicyTotals(client, userId) {
         `
         SELECT
             COALESCE((
-                SELECT SUM(vp.price_usdt)
-                FROM vip_purchases vp
-                WHERE vp.user_id = $1
-                  AND vp.status IN ('active', 'completed', 'expired')
-                  AND COALESCE(vp.price_usdt, 0) > 0
+                SELECT SUM(ma.invested_amount)
+                FROM mining_accounts ma
+                WHERE ma.user_id = $1
+                  AND ma.status IN ('active', 'completed')
+                  AND ma.current_plan_id IS NOT NULL
+                  AND COALESCE(ma.invested_amount, 0) > 0
             ), 0) AS total_vip_invested,
             COALESCE((
                 SELECT SUM(w.amount_requested)
@@ -318,23 +322,27 @@ async function getWithdrawInfo(req, res) {
                     WHEN $2 = 'BEP20-USDT' THEN COALESCE(uwa.withdrawal_address, u.withdrawal_address_bep20)
                     ELSE uwa.withdrawal_address
                 END AS withdrawal_address,
-                COALESCE((
-                    SELECT MAX(vp.level)
-                    FROM vip_purchases vp
-                    WHERE vp.user_id = u.id
-                      AND vp.status = 'active'
-                      AND vp.expires_at > NOW()
-                ), 0) AS active_vip_level,
-                (
-                    SELECT MIN(vp.purchased_at)
-                    FROM vip_purchases vp
-                    WHERE vp.user_id = u.id
-                      AND vp.status IN ('active', 'completed', 'expired')
-                ) AS first_vip_purchased_at,
+                CASE
+                    WHEN ma.status = 'active'
+                      AND ma.current_plan_id IS NOT NULL
+                      AND COALESCE(ma.invested_amount, 0) >= 5
+                    THEN COALESCE(mp.level, 0)
+                    ELSE 0
+                END AS active_vip_level,
+                CASE
+                    WHEN ma.status = 'active'
+                      AND ma.current_plan_id IS NOT NULL
+                      AND COALESCE(ma.invested_amount, 0) >= 5
+                    THEN COALESCE(mp.name, CONCAT('NiceHash-', mp.level))
+                    ELSE NULL
+                END AS active_vip_name,
+                COALESCE(ma.created_at, ma.cycle_started_at) AS first_vip_purchased_at,
                 COALESCE(ma.invested_amount, u.balance_usdt, u.recharge_balance_usdt, 0) AS active_investment_usdt
             FROM users u
             LEFT JOIN mining_accounts ma
               ON ma.user_id = u.id
+            LEFT JOIN mining_plans mp
+              ON mp.id = ma.current_plan_id
             LEFT JOIN user_withdrawal_addresses uwa
               ON uwa.user_id = u.id
              AND uwa.network = $2
@@ -385,6 +393,7 @@ async function getWithdrawInfo(req, res) {
             hasActiveInvestment,
             activeInvestmentUsdt,
             activeVipLevel: Number(user.active_vip_level || 0),
+            activeVipName: user.active_vip_name || withdrawDayPolicy.activeVipName,
             withdrawRequirementMessage,
             withdrawalPolicy,
         });
@@ -545,23 +554,27 @@ async function createWithdrawRequest(req, res) {
                     WHEN $2 = 'BEP20-USDT' THEN COALESCE(uwa.withdrawal_address, u.withdrawal_address_bep20)
                     ELSE uwa.withdrawal_address
                 END AS withdrawal_address,
-                COALESCE((
-                    SELECT MAX(vp.level)
-                    FROM vip_purchases vp
-                    WHERE vp.user_id = u.id
-                      AND vp.status = 'active'
-                      AND vp.expires_at > NOW()
-                ), 0) AS active_vip_level,
-                (
-                    SELECT MIN(vp.purchased_at)
-                    FROM vip_purchases vp
-                    WHERE vp.user_id = u.id
-                      AND vp.status IN ('active', 'completed', 'expired')
-                ) AS first_vip_purchased_at,
+                CASE
+                    WHEN ma.status = 'active'
+                      AND ma.current_plan_id IS NOT NULL
+                      AND COALESCE(ma.invested_amount, 0) >= 5
+                    THEN COALESCE(mp.level, 0)
+                    ELSE 0
+                END AS active_vip_level,
+                CASE
+                    WHEN ma.status = 'active'
+                      AND ma.current_plan_id IS NOT NULL
+                      AND COALESCE(ma.invested_amount, 0) >= 5
+                    THEN COALESCE(mp.name, CONCAT('NiceHash-', mp.level))
+                    ELSE NULL
+                END AS active_vip_name,
+                COALESCE(ma.created_at, ma.cycle_started_at) AS first_vip_purchased_at,
                 COALESCE(ma.invested_amount, u.balance_usdt, u.recharge_balance_usdt, 0) AS active_investment_usdt
             FROM users u
             LEFT JOIN mining_accounts ma
               ON ma.user_id = u.id
+            LEFT JOIN mining_plans mp
+              ON mp.id = ma.current_plan_id
             LEFT JOIN user_withdrawal_addresses uwa
               ON uwa.user_id = u.id
              AND uwa.network = $2

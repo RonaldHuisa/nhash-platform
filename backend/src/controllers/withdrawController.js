@@ -30,23 +30,8 @@ const WITHDRAW_SCHEDULE_BY_LEVEL = [
     { min: 5, max: Infinity, days: [3, 6], label: "miércoles y sábado" },
 ];
 
-function getLimaWeekday(date = new Date()) {
-    const weekday = new Intl.DateTimeFormat("en-US", {
-        timeZone: "America/Lima",
-        weekday: "short",
-    }).format(date);
-
-    const map = {
-        Sun: 0,
-        Mon: 1,
-        Tue: 2,
-        Wed: 3,
-        Thu: 4,
-        Fri: 5,
-        Sat: 6,
-    };
-
-    return map[weekday] ?? date.getDay();
+function getUtcWeekday(date = new Date()) {
+    return date.getUTCDay();
 }
 
 function getWithdrawScheduleForVipLevel(vipLevel) {
@@ -68,7 +53,7 @@ function getNextWithdrawDayLabel(allowedDays, todayDow) {
 
 function buildWithdrawDayPolicy(vipLevel, date = new Date()) {
     const level = Number(vipLevel || 0);
-    const todayDow = getLimaWeekday(date);
+    const todayDow = getUtcWeekday(date);
     const schedule = getWithdrawScheduleForVipLevel(level);
 
     if (!schedule) {
@@ -80,7 +65,9 @@ function buildWithdrawDayPolicy(vipLevel, date = new Date()) {
             allowedDays: [],
             allowedDaysLabel: "",
             nextWithdrawDay: "",
-            message: "Necesitas un nivel NiceHash activo para solicitar retiros.",
+            timezone: "UTC",
+            activeVipName: "Sin NiceHash activo",
+            message: "Nivel actual: sin NiceHash activo. Necesitas un nivel NiceHash activo para solicitar retiros. Horario de validación: UTC.",
         };
     }
 
@@ -97,9 +84,11 @@ function buildWithdrawDayPolicy(vipLevel, date = new Date()) {
         allowedDays: schedule.days,
         allowedDaysLabel: schedule.label,
         nextWithdrawDay,
+        timezone: "UTC",
+        activeVipName: `NiceHash-${level}`,
         message: allowedToday
-            ? `Tu nivel NiceHash-${level} permite retiros los ${schedule.label}.`
-            : `Tu nivel NiceHash-${level} solo permite retiros los ${schedule.label}. Próximo día disponible: ${nextWithdrawDay}.`,
+            ? `Nivel actual: NiceHash-${level}. Puedes retirar los ${schedule.label} (UTC).`
+            : `Nivel actual: NiceHash-${level}. Tus retiros están disponibles los ${schedule.label} (UTC). Próximo día disponible: ${nextWithdrawDay} (UTC).`,
     };
 }
 
@@ -378,7 +367,7 @@ async function getWithdrawInfo(req, res) {
         const withdrawDayPolicy = buildWithdrawDayPolicy(user.active_vip_level);
         const canWithdraw = hasActiveInvestment && withdrawDayPolicy.allowedToday;
         const withdrawRequirementMessage = !hasActiveInvestment
-            ? "Debes invertir mínimo 5 USDT para habilitar los retiros."
+            ? `${withdrawDayPolicy.message} Debes invertir mínimo 5 USDT para habilitar los retiros.`
             : withdrawDayPolicy.message;
 
         return res.json({

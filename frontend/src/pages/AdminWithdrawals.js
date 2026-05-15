@@ -132,7 +132,7 @@ export default function AdminWithdrawals() {
                 <>
                     <div className="admin-section-title">
                         <h2>Aprobar</h2>
-                        <p>Solo retiros mayores a 20 USDT o pagos automáticos fallidos.</p>
+                        <p>Solo retiros mayores a 100 USDT o pagos automáticos fallidos.</p>
                     </div>
 
                     {pendingWithdrawals.length === 0 && (

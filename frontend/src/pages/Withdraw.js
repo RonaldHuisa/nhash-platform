@@ -304,8 +304,11 @@ export default function Withdraw() {
           </p>
           <p>1: {t("Retiro mínimo")} {Number(minWithdraw || 0).toFixed(2)} USDT</p>
           <p>2: {t("Verifica que la dirección pertenezca a la red seleccionada antes de confirmar.")}</p>
+          {withdrawalDayPolicy?.activeVipName && (
+            <p>3: {t("Nivel actual")}: <b>{t(withdrawalDayPolicy.activeVipName)}</b></p>
+          )}
           {withdrawalDayPolicy?.allowedDaysLabel && (
-            <p>3: {t("Días disponibles para tu nivel")}: <b>{t(withdrawalDayPolicy.allowedDaysLabel)}</b></p>
+            <p>4: {t("Días disponibles para tu nivel")}: <b>{t(withdrawalDayPolicy.allowedDaysLabel)} ({withdrawalDayPolicy.timezone || "UTC"})</b></p>
           )}
         </div>
       </section>

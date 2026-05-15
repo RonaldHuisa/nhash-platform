@@ -13,6 +13,96 @@ const WITHDRAW_FEE_PERCENT = 8;
 const MIN_WITHDRAW_USDT = 1;
 const AUTO_WITHDRAW_MAX_USDT = Number(process.env.AUTO_WITHDRAW_MAX_USDT || 20);
 
+
+const WITHDRAW_DAY_NAMES = {
+    0: "domingo",
+    1: "lunes",
+    2: "martes",
+    3: "miércoles",
+    4: "jueves",
+    5: "viernes",
+    6: "sábado",
+};
+
+const WITHDRAW_SCHEDULE_BY_LEVEL = [
+    { min: 1, max: 2, days: [1, 4], label: "lunes y jueves" },
+    { min: 3, max: 4, days: [2, 5], label: "martes y viernes" },
+    { min: 5, max: Infinity, days: [3, 6], label: "miércoles y sábado" },
+];
+
+function getLimaWeekday(date = new Date()) {
+    const weekday = new Intl.DateTimeFormat("en-US", {
+        timeZone: "America/Lima",
+        weekday: "short",
+    }).format(date);
+
+    const map = {
+        Sun: 0,
+        Mon: 1,
+        Tue: 2,
+        Wed: 3,
+        Thu: 4,
+        Fri: 5,
+        Sat: 6,
+    };
+
+    return map[weekday] ?? date.getDay();
+}
+
+function getWithdrawScheduleForVipLevel(vipLevel) {
+    const level = Number(vipLevel || 0);
+
+    return WITHDRAW_SCHEDULE_BY_LEVEL.find(
+        (item) => level >= item.min && level <= item.max
+    ) || null;
+}
+
+function getNextWithdrawDayLabel(allowedDays, todayDow) {
+    if (!Array.isArray(allowedDays) || allowedDays.length === 0) return "";
+
+    const sortedDays = [...allowedDays].sort((a, b) => a - b);
+    const nextDow = sortedDays.find((day) => day > todayDow) ?? sortedDays[0];
+
+    return WITHDRAW_DAY_NAMES[nextDow] || "";
+}
+
+function buildWithdrawDayPolicy(vipLevel, date = new Date()) {
+    const level = Number(vipLevel || 0);
+    const todayDow = getLimaWeekday(date);
+    const schedule = getWithdrawScheduleForVipLevel(level);
+
+    if (!schedule) {
+        return {
+            allowedToday: false,
+            activeVipLevel: level,
+            todayDow,
+            todayName: WITHDRAW_DAY_NAMES[todayDow],
+            allowedDays: [],
+            allowedDaysLabel: "",
+            nextWithdrawDay: "",
+            message: "Necesitas un nivel NiceHash activo para solicitar retiros.",
+        };
+    }
+
+    const allowedToday = schedule.days.includes(todayDow);
+    const nextWithdrawDay = allowedToday
+        ? WITHDRAW_DAY_NAMES[todayDow]
+        : getNextWithdrawDayLabel(schedule.days, todayDow);
+
+    return {
+        allowedToday,
+        activeVipLevel: level,
+        todayDow,
+        todayName: WITHDRAW_DAY_NAMES[todayDow],
+        allowedDays: schedule.days,
+        allowedDaysLabel: schedule.label,
+        nextWithdrawDay,
+        message: allowedToday
+            ? `Tu nivel NiceHash-${level} permite retiros los ${schedule.label}.`
+            : `Tu nivel NiceHash-${level} solo permite retiros los ${schedule.label}. Próximo día disponible: ${nextWithdrawDay}.`,
+    };
+}
+
 const WITHDRAW_INVITE_POLICY = {
     requiredActiveInvites: 5,
     reductionPercent: 75,
@@ -285,6 +375,11 @@ async function getWithdrawInfo(req, res) {
 
         const activeInvestmentUsdt = Number(user.active_investment_usdt || 0);
         const hasActiveInvestment = activeInvestmentUsdt >= 5;
+        const withdrawDayPolicy = buildWithdrawDayPolicy(user.active_vip_level);
+        const canWithdraw = hasActiveInvestment && withdrawDayPolicy.allowedToday;
+        const withdrawRequirementMessage = !hasActiveInvestment
+            ? "Debes invertir mínimo 5 USDT para habilitar los retiros."
+            : withdrawDayPolicy.message;
 
         return res.json({
             available: user.withdrawable_usdt || "0",
@@ -294,13 +389,14 @@ async function getWithdrawInfo(req, res) {
             minWithdraw: getNetworkMinWithdraw(paymentNetwork),
             withdrawalAddress: user.withdrawal_address,
             addressLocked: Boolean(user.withdrawal_address),
-            canWithdraw: hasActiveInvestment,
+            canWithdraw,
+            withdrawalDayAllowed: withdrawDayPolicy.allowedToday,
+            withdrawalDayPolicy: withdrawDayPolicy,
             hasActiveVip: hasActiveInvestment,
             hasActiveInvestment,
             activeInvestmentUsdt,
             activeVipLevel: Number(user.active_vip_level || 0),
-            withdrawRequirementMessage:
-                "Debes invertir mínimo 5 USDT para habilitar los retiros.",
+            withdrawRequirementMessage,
             withdrawalPolicy,
         });
     } catch (error) {
@@ -500,6 +596,18 @@ async function createWithdrawRequest(req, res) {
 
             return res.status(400).json({
                 message: "Debes invertir mínimo 5 USDT para habilitar los retiros.",
+            });
+        }
+
+        const withdrawDayPolicy = buildWithdrawDayPolicy(user.active_vip_level);
+
+        if (!withdrawDayPolicy.allowedToday) {
+            await client.query("ROLLBACK");
+
+            return res.status(400).json({
+                message: withdrawDayPolicy.message,
+                withdrawalDayAllowed: false,
+                withdrawalDayPolicy: withdrawDayPolicy,
             });
         }
 

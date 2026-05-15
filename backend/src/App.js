@@ -15,8 +15,12 @@ import Transactions from "./pages/Transactions";
 import AdminWithdrawals from "./pages/AdminWithdrawals";
 import AdminStatus from "./pages/AdminStatus";
 import AdminDeposits from "./pages/AdminDeposits";
+import AdminSecurity from "./pages/AdminSecurity";
 import MembersList from "./pages/MembersList";
 import Tasks from "./pages/Tasks";
+import HashRewards from "./pages/HashRewards";
+import Reinvest from "./pages/Reinvest";
+import About from "./pages/About";
 
 import { LanguageProvider } from "./i18n/I18nContext";
 import DomTranslator from "./i18n/DomTranslator";
@@ -48,8 +52,12 @@ function ProtectedLayout() {
         <Route path="/admin/withdrawals" element={<AdminWithdrawals />} />
         <Route path="/admin/status" element={<AdminStatus />} />
         <Route path="/admin/deposits" element={<AdminDeposits />} />
+        <Route path="/admin/security" element={<AdminSecurity />} />
         <Route path="/members/:level" element={<MembersList />} />
         <Route path="/tasks" element={<Tasks />} />
+        <Route path="/rewards" element={<HashRewards />} />
+        <Route path="/reinvest" element={<Reinvest />} />
+        <Route path="/about" element={<About />} />
         
         <Route path="*" element={<Navigate to="/home" replace />} />
       </Routes>

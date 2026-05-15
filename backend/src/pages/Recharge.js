@@ -1,49 +1,67 @@
 import React, { useCallback, useEffect, useMemo, useRef, useState } from "react";
-import { useNavigate } from "react-router-dom";
+import { useNavigate, useSearchParams } from "react-router-dom";
 import { QRCodeCanvas } from "qrcode.react";
-import { FiArrowLeft, FiCopy, FiCheckCircle } from "react-icons/fi";
+import {
+  FiArrowLeft,
+  FiChevronRight,
+  FiCopy,
+  FiInfo,
+  FiList,
+} from "react-icons/fi";
 import { getMyWalletFromApi, scanMyDeposits } from "../services/authService";
 import { useI18n } from "../i18n/I18nContext";
-import usdtBep20Icon from "../assets/networks/usdt-bep20.png";
-import usdtPolygonIcon from "../assets/networks/usdt-polygon.png";
 
 const PAYMENT_NETWORKS = [
   {
     code: "BEP20-USDT",
     label: "BEP20-USDT",
+    shortLabel: "BEP20-USDT",
     chain: "BNB Smart Chain BEP20",
-    tokenBadge: "BNB",
-    icon: usdtBep20Icon,
+    description: "BNB Smart Chain",
+    token: "USDT",
+    icon: "/images/networks/bep20-usdt.webp",
+    enabled: true,
   },
   {
     code: "POLYGON-USDT",
     label: "POLYGON-USDT",
+    shortLabel: "POLYGON-USDT",
     chain: "Polygon",
-    tokenBadge: "POLYGON",
-    icon: usdtPolygonIcon,
+    description: "Polygon",
+    token: "USDT",
+    icon: "/images/networks/polygon-usdt.webp",
+    enabled: true,
   },
 ];
 
+function getNetworkByCode(code) {
+  return PAYMENT_NETWORKS.find((item) => item.code === code) || PAYMENT_NETWORKS[0];
+}
+
 export default function Recharge() {
   const navigate = useNavigate();
+  const [searchParams, setSearchParams] = useSearchParams();
   const { t } = useI18n();
   const toastTimerRef = useRef(null);
 
-  const [selectedNetwork, setSelectedNetwork] = useState("BEP20-USDT");
+  const initialNetwork = searchParams.get("network") || "";
+  const [selectedNetwork, setSelectedNetwork] = useState(initialNetwork);
   const [wallet, setWallet] = useState(null);
-  const [loading, setLoading] = useState(true);
+  const [loading, setLoading] = useState(false);
   const [scanning, setScanning] = useState(false);
   const [copied, setCopied] = useState(false);
   const [toast, setToast] = useState("");
   const [toastType, setToastType] = useState("info");
   const [error, setError] = useState("");
 
+  const isSelectingNetwork = !selectedNetwork;
+
   const currentNetwork = useMemo(
-    () => PAYMENT_NETWORKS.find((item) => item.code === selectedNetwork) || PAYMENT_NETWORKS[0],
+    () => getNetworkByCode(selectedNetwork || "BEP20-USDT"),
     [selectedNetwork]
   );
 
-  const showToast = useCallback((message, type = "info", duration = 3800) => {
+  const showToast = useCallback((message, type = "info", duration = 3200) => {
     if (toastTimerRef.current) clearTimeout(toastTimerRef.current);
 
     setToast(message);
@@ -54,16 +72,9 @@ export default function Recharge() {
     }, duration);
   }, []);
 
-  const showTempCopied = useCallback(() => {
-    setCopied(true);
-    showToast(t("Dirección copiada"), "success", 2200);
-
-    setTimeout(() => {
-      setCopied(false);
-    }, 1800);
-  }, [showToast, t]);
-
   const loadWallet = useCallback(async () => {
+    if (!selectedNetwork) return;
+
     try {
       setLoading(true);
       setError("");
@@ -98,12 +109,36 @@ export default function Recharge() {
     wallet?.bep20Address ||
     "";
 
+  const handleSelectNetwork = (networkCode) => {
+    setWallet(null);
+    setError("");
+    setSelectedNetwork(networkCode);
+    setSearchParams({ network: networkCode });
+  };
+
+  const handleBack = () => {
+    if (!isSelectingNetwork) {
+      setSelectedNetwork("");
+      setWallet(null);
+      setError("");
+      setSearchParams({});
+      return;
+    }
+
+    navigate("/home");
+  };
+
   const handleCopy = async () => {
     if (!address) return;
 
     try {
       await navigator.clipboard.writeText(address);
-      showTempCopied();
+      setCopied(true);
+      showToast(t("Dirección copiada"), "success", 2200);
+
+      setTimeout(() => {
+        setCopied(false);
+      }, 1600);
     } catch {
       const message = t("No se pudo copiar la dirección.");
       setError(message);
@@ -116,13 +151,28 @@ export default function Recharge() {
       setScanning(true);
       setError("");
 
-      await scanMyDeposits(selectedNetwork);
+      const scanResult = await scanMyDeposits(selectedNetwork);
+      const addedAmount = Number(scanResult?.addedAmount || 0);
+      const addedDeposits = Number(scanResult?.addedDeposits || 0);
+      const reconciledCreditAmount = Number(scanResult?.reconciledCreditAmount || 0);
+      const credited = Boolean(scanResult?.credited) || addedDeposits > 0 || addedAmount > 0 || reconciledCreditAmount > 0;
+      const alreadyProcessed = Boolean(scanResult?.alreadyProcessed);
+      const pendingVerification = Boolean(scanResult?.pendingVerification);
 
-      showToast(
-        t("Éxito. La plataforma revisará y acreditará tu recarga automáticamente."),
-        "success",
-        5200
-      );
+      if (credited) {
+        showToast(t("Éxito"), "success", 1800);
+
+        localStorage.setItem("nicehash_balance_refresh", String(Date.now()));
+        window.dispatchEvent(new Event("nicehash:balance-refresh"));
+
+        setTimeout(() => {
+          navigate(`/home?refresh=${Date.now()}`, { replace: true });
+        }, 900);
+      } else if (pendingVerification || alreadyProcessed) {
+        showToast(t("Éxito"), "success", 1800);
+      } else {
+        showToast(t("Éxito"), "success", 1800);
+      }
 
       await loadWallet();
     } catch (err) {
@@ -135,155 +185,117 @@ export default function Recharge() {
   };
 
   return (
-    <div className="page recharge-page recharge-pro-page">
+    <div className="page recharge-simple-page">
       {toast && (
-        <div className={`luven-toast luven-toast-${toastType}`}>
-          <strong>{toast}</strong>
+        <div className={`center-simple-toast center-simple-toast-${toastType}`}>
+          <span>{toast}</span>
         </div>
       )}
 
-      <div className="recharge-header recharge-pro-header">
-        <button className="icon-btn" type="button" onClick={() => navigate("/home")}>
+      <div className="recharge-simple-header">
+        <button className="recharge-simple-back" type="button" onClick={handleBack}>
           <FiArrowLeft />
         </button>
 
-        <div>
-          <div className="eyebrow">{currentNetwork.label}</div>
-          <h2>{t("Recargar")}</h2>
-        </div>
+        <h2>{isSelectingNetwork ? t("Método de depósito") : t("Depósito")}</h2>
 
-        <button className="icon-btn ghost-icon" type="button" onClick={handleCopy}>
-          <FiCopy />
-        </button>
+        {!isSelectingNetwork ? (
+          <button className="recharge-simple-action" type="button" onClick={handleCopy}>
+            <FiCopy />
+          </button>
+        ) : (
+          <span className="recharge-simple-placeholder" />
+        )}
       </div>
 
-      <div className="panel network-select-panel">
-        <div className="network-select-title">
-          <strong>{t("Selecciona red de depósito")}</strong>
-          <span>{t("Elige la red antes de enviar fondos.")}</span>
-        </div>
-
-        <div className="network-option-grid">
-          {PAYMENT_NETWORKS.map((network) => (
+      {isSelectingNetwork ? (
+        <section className="deposit-method-panel">
+          {PAYMENT_NETWORKS.filter((network) => network.enabled).map((network) => (
             <button
               key={network.code}
               type="button"
-              className={`network-option-card ${selectedNetwork === network.code ? "active" : ""}`}
-              onClick={() => setSelectedNetwork(network.code)}
+              className="deposit-method-row"
+              onClick={() => handleSelectNetwork(network.code)}
             >
-              <span className="network-option-icon">
+              <span className="deposit-method-icon">
                 <img src={network.icon} alt={network.label} />
               </span>
-              <span className="network-option-text">
+
+              <span className="deposit-method-text">
                 <strong>{network.label}</strong>
-                <small>{network.chain}</small>
               </span>
+
+              <FiChevronRight className="deposit-method-chevron" />
             </button>
           ))}
-        </div>
-      </div>
-
-      {loading ? (
-        <div className="panel recharge-loading-card">
-          <p>{t("Cargando dirección de depósito...")}</p>
-        </div>
+        </section>
       ) : (
-        <>
-          {error && (
-            <div className="panel auth-error recharge-error-inline">
-              {error}
-            </div>
-          )}
+        <section className="deposit-detail-simple">
+          <div className="deposit-selected-network-simple">
+            <span className="deposit-detail-network-icon">
+              <img src={currentNetwork.icon} alt={currentNetwork.label} />
+            </span>
+            <strong>{currentNetwork.label}</strong>
+          </div>
 
-          <div className="panel recharge-pro-card">
-            <div className="recharge-network-top recharge-network-top-centered">
-              <h3>{t("Red de depósito")}</h3>
-              <div className="selected-network-card">
-                <img
-                  className="selected-network-icon"
-                  src={currentNetwork.icon}
-                  alt={currentNetwork.label}
-                />
-                <div className="selected-network-copy">
-                  <strong>{currentNetwork.label}</strong>
-                  <span>{currentNetwork.chain}</span>
-                </div>
-              </div>
-            </div>
+          {loading ? (
+            <div className="deposit-detail-loading">{t("Cargando dirección de depósito...")}</div>
+          ) : (
+            <>
+              {error && <div className="auth-error recharge-error-inline">{error}</div>}
 
-            <div className="qr-frame">
-              <div className="qr-wrapper">
+              <div className="deposit-qr-simple">
                 <QRCodeCanvas
                   value={address}
-                  size={190}
+                  size={176}
                   bgColor="#ffffff"
                   fgColor="#000000"
                   level="H"
                   includeMargin={true}
                 />
               </div>
-            </div>
-          </div>
 
-          <div className="panel deposit-panel deposit-pro-panel">
-            <div className="deposit-title-row deposit-title-row-clean">
-              <div>
-                <h3 className="deposit-title">{t("Dirección de depósito")}</h3>
-                <span className="deposit-subtitle">Wallet</span>
+              <div className="deposit-address-simple-block">
+                <label>{t("Dirección de depósito")}</label>
+
+                <div className="deposit-address-simple-row">
+                  <span>{address || t("Sin dirección disponible")}</span>
+                  <button type="button" onClick={handleCopy} disabled={!address}>
+                    {copied ? t("Copiado") : t("Copiar")}
+                  </button>
+                </div>
               </div>
-              <span className="wallet-tag">{currentNetwork.label}</span>
-            </div>
-
-            <div className="deposit-box deposit-pro-box deposit-box-clean">
-              <span className="deposit-address">
-                {address || t("Sin dirección disponible")}
-              </span>
 
               <button
-                className="copy-btn deposit-copy-btn"
+                className="deposit-confirm-simple-btn"
                 type="button"
-                onClick={handleCopy}
-                disabled={!address}
+                onClick={handleScan}
+                disabled={scanning || !address}
               >
-                <FiCopy />
-                <span>{copied ? t("Copiado") : t("Copiar")}</span>
+                {scanning ? t("Confirmando...") : t("Depósito realizado")}
               </button>
-            </div>
-          </div>
 
-          <button
-            className="primary-btn recharge-main-btn"
-            type="button"
-            onClick={handleScan}
-            disabled={scanning || !address}
-          >
-            {scanning ? t("Confirmando...") : t("He realizado mi recarga")}
-          </button>
+              <div className="deposit-note-simple">
+                <div className="deposit-note-title">
+                  <FiInfo />
+                  <strong>{t("Nota")}</strong>
+                </div>
 
-          <div className="recharge-notes recharge-pro-notes">
-            <div className="notes-title">
-              <FiCheckCircle />
-              <span>{t("Recordatorio importante")}</span>
-            </div>
-
-            <ol>
-              <li>{t("Copia la dirección superior o escanea el código QR.")}</li>
-              <li>
-                {t("Usa únicamente la red")}{" "}
-                <strong>{currentNetwork.chain}</strong>{" "}
-                {t("para enviar USDT.")}
-              </li>
-              <li>
-                {t("Después de enviar el pago, presiona")}{" "}
-                <strong>“{t("Recarga completa")}”</strong>.{" "}
-                {t("Este paso es vital para verificar la blockchain y abonar tu saldo.")}
-              </li>
-              <li>
-                {t("El botón solo muestra una confirmación. No fuerza el escaneo manual ni duplica depósitos.")}
-              </li>
-            </ol>
-          </div>
-        </>
+                <ol>
+                  <li>
+                    {t("Copia la dirección anterior o escanea el código QR y selecciona la red correcta para depositar USDT.")}
+                  </li>
+                  <li>
+                    {t("Si en los próximos 3 a 5 minutos no se refleja el monto depositado, puedes presionar nuevamente Depósito realizado o contactarte con soporte.")}
+                  </li>
+                  <li>
+                    {t("No nos hacemos responsables por depósitos enviados a otra dirección o a una red diferente a la seleccionada.")}
+                  </li>
+                </ol>
+              </div>
+            </>
+          )}
+        </section>
       )}
     </div>
   );

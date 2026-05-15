@@ -1,27 +1,33 @@
-import React, { useCallback, useEffect, useState } from "react";
+import React, { useCallback, useEffect, useMemo, useState } from "react";
 import {
-  FiAward,
-  FiCheckCircle,
   FiChevronRight,
   FiCopy,
-  FiGift,
+  FiHash,
   FiLink,
-  FiLock,
-  FiSearch,
   FiUsers,
 } from "react-icons/fi";
 import { useNavigate } from "react-router-dom";
-import { getPromotionDashboard, getReferralRewardsStatus, claimReferralReward } from "../services/authService";
+import { getPromotionDashboard } from "../services/authService";
 import { useI18n } from "../i18n/I18nContext";
 
 function money(value) {
-  return Number(value || 0).toFixed(2);
+  const amount = Number(value || 0);
+  return Number.isFinite(amount) ? amount.toFixed(2) : "0.00";
 }
 
-function getRewardStatusIcon(status) {
-  if (status === "claimed" || status === "paid") return <FiCheckCircle />;
-  if (status === "available") return <FiGift />;
-  return <FiLock />;
+function numberValue(value) {
+  const amount = Number(value || 0);
+  return Number.isFinite(amount) ? amount : 0;
+}
+
+function getReferralCode(data) {
+  if (data?.referralCode) return String(data.referralCode);
+  if (data?.user?.referral_code) return String(data.user.referral_code);
+  if (data?.user?.referralCode) return String(data.user.referralCode);
+
+  const link = String(data?.referralLink || "");
+  const match = link.match(/[?&]ref=([^&]+)/i) || link.match(/[?&]invite_code=([^&]+)/i);
+  return match ? decodeURIComponent(match[1]) : "";
 }
 
 export default function Promotion() {
@@ -29,288 +35,178 @@ export default function Promotion() {
   const { t } = useI18n();
 
   const [data, setData] = useState(null);
-  const [rewards, setRewards] = useState(null);
-  const [claimingTier, setClaimingTier] = useState(null);
   const [toast, setToast] = useState("");
+  const [loading, setLoading] = useState(true);
 
   const showToast = (message) => {
     setToast(message);
-    setTimeout(() => setToast(""), 2600);
+    setTimeout(() => setToast(""), 2400);
   };
 
   const loadData = useCallback(async () => {
     try {
-      const [dashboardResult, rewardsResult] = await Promise.all([
-        getPromotionDashboard(),
-        getReferralRewardsStatus(),
-      ]);
-
-      setData(dashboardResult);
-      setRewards(rewardsResult);
+      setLoading(true);
+      const dashboardResult = await getPromotionDashboard();
+      setData(dashboardResult || {});
     } catch (error) {
-      showToast(error.message);
+      showToast(error.message || t("No se pudo cargar el equipo."));
+      setData({});
+    } finally {
+      setLoading(false);
     }
-  }, []);
+  }, [t]);
 
   useEffect(() => {
     loadData();
 
-    const handleFocus = () => {
-      loadData();
-    };
-
+    const handleFocus = () => loadData();
     window.addEventListener("focus", handleFocus);
 
-    return () => {
-      window.removeEventListener("focus", handleFocus);
-    };
+    return () => window.removeEventListener("focus", handleFocus);
   }, [loadData]);
 
-  if (!data) {
-    return (
-      <div className="page promotion-page">
-        <div className="panel">{t("Cargando promoción...")}</div>
-      </div>
-    );
-  }
+  const referralCode = useMemo(() => getReferralCode(data), [data]);
 
-  const copyLink = async () => {
-    if (!data?.referralLink) {
-      showToast("No hay enlace para copiar");
+  const referralLink = useMemo(() => {
+    if (data?.referralLink) return data.referralLink;
+    return `${window.location.origin}/register?ref=${referralCode || ""}`;
+  }, [data?.referralLink, referralCode]);
+
+  const copyText = async (value, successMessage) => {
+    if (!value) {
+      showToast(t("No hay información para copiar."));
       return;
     }
 
     try {
-      await navigator.clipboard.writeText(data.referralLink);
-      showToast(t("Enlace copiado."));
+      await navigator.clipboard.writeText(value);
+      showToast(successMessage);
     } catch (error) {
-      showToast(t("No se pudo copiar el enlace."));
+      showToast(t("No se pudo copiar."));
     }
   };
 
-  const handleClaimReward = async (tierId) => {
-    try {
-      setClaimingTier(tierId);
+  const levels = data?.levels || [];
 
-      const result = await claimReferralReward(tierId);
-
-      showToast(result.message || t("Premio reclamado correctamente."));
-
-      const rewardsResult = await getReferralRewardsStatus();
-      setRewards(rewardsResult);
-    } catch (error) {
-      showToast(error.message || t("No se pudo reclamar el premio."));
-    } finally {
-      setClaimingTier(null);
-    }
-  };
+  const totalMembers = numberValue(data?.totalMembers);
+  const totalIncome = numberValue(data?.totalIncome);
+  const totalTeamRecharge = numberValue(data?.totalTeamRecharge);
+  const totalTeamWithdrawals = numberValue(
+    data?.totalTeamWithdrawals || data?.teamWithdrawals || data?.withdrawalsTotal || 0
+  );
 
   return (
-    <div className="page promotion-page promotion-page-v2">
+    <div className="page promotion-page team-simple-page">
       {toast && (
         <div className="success-toast">
           <strong>{toast}</strong>
         </div>
       )}
 
-      <div className="promotion-header">
-        <div>
-          <div className="eyebrow">{t("Red de referidos")}</div>
-          <h2>{t("Promoción")}</h2>
-        </div>
-
-      </div>
-
-      <div className="promotion-stats-row promo-income-row">
-        <div className="promotion-stat-card promo-income-card">
-          <p>{t("Ingresos totales")}</p>
-          <strong>{money(data.totalIncome)} USDT</strong>
-        </div>
-
-        <div className="promotion-stat-card promo-income-card">
-          <p>{t("Ingresos de hoy")}</p>
-          <strong>{money(data.todayIncome)} USDT</strong>
-        </div>
-      </div>
-
-      <div className="panel invite-mini-panel promotion-invite-panel">
-        <div className="panel-title-row promo-link-title">
-          <div className="promo-title-inline">
-            <h3>{t("Enlace de invitación")}</h3>
-            <span className="icon-badge sm tone-mint">
-              <FiLink />
-            </span>
-          </div>
-        </div>
-
-        <div className="invite-link-row">
-          <span>{data.referralLink}</span>
-
-          <button type="button" onClick={copyLink} aria-label={t("Copiar enlace")}>
-            <FiCopy />
-          </button>
-        </div>
-      </div>
-
-      <div className="panel promotion-summary-panel compact-summary-panel">
-        <div className="promotion-mini-title">
-          <span className="icon-badge sm tone-lavender promo-summary-icon">
-            <FiUsers />
-          </span>
+      <section className="team-simple-copy-card">
+        <div className="team-simple-copy-title">
+          <FiLink />
           <div>
-            <strong>{t("Resumen del equipo")}</strong>
-            <span>{t("Datos generales de tu red")}</span>
+            <h2>{t("Invita y gana")}</h2>
+            <p>{t("Comparte tu código o enlace de invitación")}</p>
           </div>
         </div>
 
-        <div className="promo-summary-grid three">
-          <div className="mini-metric-card">
-            <strong>{data.totalMembers}</strong>
-            <span>{t("Miembros")}</span>
-          </div>
-
-          <div className="mini-metric-card">
-            <strong>{money(data.totalTeamRecharge)}</strong>
-            <span>{t("Recarga")}</span>
-          </div>
-
-          <div className="mini-metric-card accent">
-            <strong>{data.todayAdded}</strong>
-            <span>{t("Hoy")}</span>
-          </div>
-        </div>
-      </div>
-
-      <div className="panel promotion-levels-panel promo-levels-compact">
-        {data.levels.map((level) => (
-          <div className="promotion-level-block" key={level.level}>
-            <div className="level-title-row">
-              <div className="level-title-left">
-                <span className="icon-badge sm tone-blue">
-                  <FiUsers />
-                </span>
-                <div>
-                  <h3 className="level-team-pill">{t(`Equipo Nivel ${level.level}`)}</h3>
-                </div>
-              </div>
-
+        <div className="team-simple-copy-grid">
+          <div className="team-simple-copy-box">
+            <span>{t("Código de invitación")}</span>
+            <div className="team-simple-copy-row">
+              <strong data-no-translate="true">
+                <FiHash />
+                {referralCode || "-"}
+              </strong>
               <button
                 type="button"
-                onClick={() => navigate(`/members/${level.level}`)}
+                onClick={() => copyText(referralCode, t("Código copiado."))}
               >
-                <FiSearch />
-                <span>{t("Miembros")}</span>
-                <FiChevronRight />
+                <FiCopy />
+                {t("Copiar")}
               </button>
             </div>
-
-            <div className="level-grid level-grid-compact">
-              <div>
-                <strong>{level.totalMembers}</strong>
-                <span>{t("Total")}</span>
-              </div>
-
-              <div>
-                <strong>{level.activeMembers}</strong>
-                <span>{t("Activos")}</span>
-              </div>
-
-              <div>
-                <strong>{money(level.teamRecharge)}</strong>
-                <span>{t("Recarga")}</span>
-              </div>
-
-              <div>
-                <strong>{money(level.totalCommission)}</strong>
-                <span>{t("Comisión")}</span>
-              </div>
-            </div>
-          </div>
-        ))}
-      </div>
-
-      {rewards && (
-        <section className="promotion-reward-section">
-          <div className="promotion-reward-banner">
-            <div className="promotion-reward-banner-icon">
-              <FiAward />
-            </div>
-
-            <div className="promotion-reward-banner-copy">
-              <span>{t("Premios por invitar")}</span>
-              <strong>{t("Invita usuarios activos y desbloquea bonos extra.")}</strong>
-            </div>
-
-            <div className="promotion-reward-banner-badge">
-              {rewards.directInvites}/{rewards.progressTarget}
-            </div>
           </div>
 
-          <div className="panel promotion-reward-progress-card">
-            <div className="promotion-reward-progress-head">
-              <div>
-                <span>{t("Invitados válidos")}</span>
-                <strong>{rewards.directInvites}</strong>
-              </div>
-
-              <div>
-                <span>{t("Próximo premio")}</span>
-                <strong>
-                  {rewards.nextTier
-                    ? `${money(rewards.nextTier.rewardUsdt)} USDT`
-                    : t("Completado")}
-                </strong>
-              </div>
-            </div>
-
-            <div className="promotion-reward-progress-bar">
-              <span style={{ width: `${rewards.progressPercent}%` }} />
-            </div>
-
-            <p>
-              {rewards.nextTier
-                ? `${rewards.directInvites}/${rewards.nextTier.requiredInvites} ${t("invitados con VIP para desbloquear")}`
-                : t("Todos los premios disponibles fueron alcanzados.")}
-            </p>
-
-            <div className="promotion-reward-tier-list">
-              {rewards.tiers.map((tier) => (
-                <div
-                  className={`promotion-reward-tier ${tier.status}`}
-                  key={tier.id}
-                >
-                  <span className="promotion-reward-tier-icon">
-                    {getRewardStatusIcon(tier.status)}
-                  </span>
-
-                  <div className="promotion-reward-tier-info">
-                    <strong>
-                      {tier.requiredInvites} {t("invitados")}
-                    </strong>
-                    <small>{money(tier.rewardUsdt)} USDT</small>
-                  </div>
-
-                  {tier.status === "available" ? (
-                    <button
-                      type="button"
-                      onClick={() => handleClaimReward(tier.id)}
-                      disabled={claimingTier === tier.id}
-                    >
-                      {claimingTier === tier.id ? t("Procesando...") : t("Reclamar")}
-                    </button>
-                  ) : (
-                    <em>
-                      {tier.status === "claimed" || tier.status === "paid"
-                        ? t("Reclamado")
-                        : t("Bloqueado")}
-                    </em>
-                  )}
-                </div>
-              ))}
+          <div className="team-simple-copy-box">
+            <span>{t("Enlace de invitación")}</span>
+            <div className="team-simple-copy-row link-row">
+              <strong data-no-translate="true">
+                <FiLink />
+                <em>{referralLink || "-"}</em>
+              </strong>
+              <button
+                type="button"
+                className="copy-link-main"
+                onClick={() => copyText(referralLink, t("Enlace copiado."))}
+              >
+                <FiCopy />
+                {t("Copiar enlace")}
+              </button>
             </div>
           </div>
-        </section>
-      )}
+        </div>
+      </section>
+
+
+      <section className="team-simple-stats-card">
+        <div className="team-simple-stat">
+          <span>{t("Tamaño del equipo")}</span>
+          <strong data-no-translate="true">{totalMembers}</strong>
+        </div>
+
+        <div className="team-simple-stat">
+          <span>{t("Comisiones de referencia")}</span>
+          <strong data-no-translate="true">${money(totalIncome)}</strong>
+        </div>
+
+        <div className="team-simple-stat">
+          <span>{t("Depósitos del equipo")}</span>
+          <strong data-no-translate="true">${money(totalTeamRecharge)}</strong>
+        </div>
+
+        <div className="team-simple-stat">
+          <span>{t("Retiros de equipos")}</span>
+          <strong data-no-translate="true">${money(totalTeamWithdrawals)}</strong>
+        </div>
+      </section>
+
+      <section className="team-simple-levels">
+        {levels.map((level) => {
+          const total = numberValue(level.totalMembers);
+          const active = numberValue(level.activeMembers);
+
+          return (
+            <button
+              type="button"
+              className="team-simple-level-card"
+              key={level.level}
+              onClick={() => navigate(`/members/${level.level}`)}
+            >
+              <strong>{`LEV ${level.level}`}</strong>
+
+              <div>
+                <span>{t("Válido/Contar")}</span>
+                <b data-no-translate="true">{active}/{total}</b>
+              </div>
+
+              <em>
+                {t("Detalles")}
+                <FiChevronRight />
+              </em>
+            </button>
+          );
+        })}
+
+        {!loading && levels.length === 0 && (
+          <div className="team-simple-empty">
+            <FiUsers />
+            <span>{t("Aún no tienes equipo registrado.")}</span>
+          </div>
+        )}
+      </section>
     </div>
   );
 }

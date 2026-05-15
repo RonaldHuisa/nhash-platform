@@ -5,6 +5,8 @@ async function request(endpoint, options = {}) {
 
   const headers = {
     "Content-Type": "application/json",
+    "Cache-Control": "no-cache, no-store, must-revalidate",
+    Pragma: "no-cache",
     ...(options.headers || {}),
   };
 
@@ -12,9 +14,15 @@ async function request(endpoint, options = {}) {
     headers.Authorization = `Bearer ${token}`;
   }
 
-  const response = await fetch(`${API_URL}${endpoint}`, {
+  const separator = endpoint.includes("?") ? "&" : "?";
+  const cacheBustedEndpoint = options.method === "GET"
+    ? `${endpoint}${separator}_=${Date.now()}`
+    : endpoint;
+
+  const response = await fetch(`${API_URL}${cacheBustedEndpoint}`, {
     ...options,
     headers,
+    cache: "no-store",
   });
 
   const data = await response.json().catch(() => ({}));
@@ -75,7 +83,10 @@ export async function getMyWalletFromApi(network = "BEP20-USDT") {
     headers: {
       Authorization: `Bearer ${token}`,
       "Content-Type": "application/json",
+      "Cache-Control": "no-cache, no-store, must-revalidate",
+      Pragma: "no-cache",
     },
+    cache: "no-store",
   });
 
   const data = await response.json();
@@ -95,7 +106,10 @@ export async function scanMyDeposits(network = "BEP20-USDT") {
     headers: {
       Authorization: `Bearer ${token}`,
       "Content-Type": "application/json",
+      "Cache-Control": "no-cache, no-store, must-revalidate",
+      Pragma: "no-cache",
     },
+    cache: "no-store",
     body: JSON.stringify({ network }),
   });
 
@@ -116,7 +130,10 @@ export async function getWithdrawInfo(network = "BEP20-USDT") {
     headers: {
       Authorization: `Bearer ${token}`,
       "Content-Type": "application/json",
+      "Cache-Control": "no-cache, no-store, must-revalidate",
+      Pragma: "no-cache",
     },
+    cache: "no-store",
   });
 
   const data = await response.json();
@@ -190,6 +207,27 @@ export async function getAdminPendingWithdrawals() {
 
   return data;
 }
+
+export async function getAdminWithdrawals() {
+  const token = localStorage.getItem("token");
+
+  const response = await fetch(`${API_URL}/admin/withdrawals`, {
+    method: "GET",
+    headers: {
+      Authorization: `Bearer ${token}`,
+      "Content-Type": "application/json",
+    },
+  });
+
+  const data = await response.json();
+
+  if (!response.ok) {
+    throw new Error(data.message || "Error al cargar historial de retiros.");
+  }
+
+  return data;
+}
+
 
 export async function approveAdminWithdrawal(withdrawalId) {
   const token = localStorage.getItem("token");
@@ -346,5 +384,96 @@ export function collectAdminDeposit(depositId) {
 export function refreshAdminDepositStatus(depositId) {
   return request(`/admin/deposits/${depositId}/refresh`, {
     method: "POST",
+  });
+}
+
+export function getMiningStatus() {
+  return request("/mining/status", { method: "GET" });
+}
+
+export function claimMiningReward() {
+  return request("/mining/claim", { method: "POST" });
+}
+
+export function getHashRewardsStatus() {
+  return request("/hash-rewards/status", { method: "GET" });
+}
+
+export function syncHashRewards() {
+  return request("/hash-rewards/sync", { method: "POST" });
+}
+
+export function redeemHashPoint() {
+  return request("/hash-rewards/redeem", { method: "POST" });
+}
+
+export function getReinvestStatus() {
+  return request("/reinvest/status", { method: "GET" });
+}
+
+export function createReinvestment(payload) {
+  return request("/reinvest/transfer", {
+    method: "POST",
+    body: JSON.stringify(payload),
+  });
+}
+
+
+export function getMarketPrices() {
+  return request("/market/prices", { method: "GET" });
+}
+
+
+export function changePassword(payload) {
+  return request("/auth/change-password", {
+    method: "POST",
+    body: JSON.stringify(payload),
+  });
+}
+
+export function getAdminSecurityUsers() {
+  return request("/admin/security/users", { method: "GET" });
+}
+
+export function getAdminRepeatedIps() {
+  return request("/admin/security/repeated-ips", { method: "GET" });
+}
+
+export function getAdminSecurityEvents(userId) {
+  return request(`/admin/security/users/${userId}/events`, { method: "GET" });
+}
+
+export function markAdminUserSuspicious(userId, reason) {
+  return request(`/admin/security/users/${userId}/mark-suspicious`, {
+    method: "POST",
+    body: JSON.stringify({ reason }),
+  });
+}
+
+export function clearAdminUserSuspicious(userId, reason) {
+  return request(`/admin/security/users/${userId}/clear-suspicious`, {
+    method: "POST",
+    body: JSON.stringify({ reason }),
+  });
+}
+
+export function banAdminUser(userId, reason) {
+  return request(`/admin/security/users/${userId}/ban`, {
+    method: "POST",
+    body: JSON.stringify({ reason }),
+  });
+}
+
+export function unbanAdminUser(userId, reason) {
+  return request(`/admin/security/users/${userId}/unban`, {
+    method: "POST",
+    body: JSON.stringify({ reason }),
+  });
+}
+
+export function markAdminIpSuspicious(ip, reason) {
+  return request(`/admin/security/ips/${encodeURIComponent(ip)}/mark-suspicious`, {
+    method: "POST",
+    body: JSON.stringify({ reason }),
   });
 }

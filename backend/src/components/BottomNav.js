@@ -1,6 +1,6 @@
 import React from "react";
 import { NavLink } from "react-router-dom";
-import { FiHome, FiRadio, FiShield, FiFileText, FiUser } from "react-icons/fi";
+import { FiHome, FiUsers, FiCpu, FiUser, FiZap } from "react-icons/fi";
 import { useI18n } from "../i18n/I18nContext";
 
 export default function BottomNav() {
@@ -8,9 +8,9 @@ export default function BottomNav() {
 
   const items = [
     { to: "/home", label: t("Hogar"), icon: <FiHome /> },
-    { to: "/promotion", label: t("Promoción"), icon: <FiRadio /> },
-    { to: "/vip", label: t("VIP"), icon: <FiShield /> },
-    { to: "/tasks", label: t("Tarea"), icon: <FiFileText /> },
+    { to: "/vip", label: t("personaje"), icon: <FiZap /> },
+    { to: "/tasks", label: t("Minería"), icon: <FiCpu /> },
+    { to: "/promotion", label: t("Equipo"), icon: <FiUsers /> },
     { to: "/profile", label: t("A mí"), icon: <FiUser /> },
   ];
 

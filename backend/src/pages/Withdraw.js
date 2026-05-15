@@ -1,5 +1,5 @@
 import React, { useCallback, useEffect, useRef, useState } from "react";
-import { FiArrowLeft, FiClock, FiEye, FiEyeOff, FiInfo } from "react-icons/fi";
+import { FiArrowLeft, FiClock, FiCopy, FiEye, FiEyeOff, FiInfo } from "react-icons/fi";
 import { useNavigate } from "react-router-dom";
 import {
   createWithdrawRequest,
@@ -8,9 +8,24 @@ import {
 import { useI18n } from "../i18n/I18nContext";
 
 const PAYMENT_NETWORKS = [
-  { code: "BEP20-USDT", label: "BEP20-USDT", chain: "BNB Smart Chain BEP20", icon: "◆" },
-  { code: "POLYGON-USDT", label: "POLYGON-USDT", chain: "Polygon", icon: "⬡" },
+  {
+    code: "BEP20-USDT",
+    label: "BEP20-USDT",
+    short: "BEP20",
+    icon: "/images/networks/bep20-usdt.webp",
+  },
+  {
+    code: "POLYGON-USDT",
+    label: "POLYGON-USDT",
+    short: "POLYGON",
+    icon: "/images/networks/polygon-usdt.webp",
+  },
 ];
+
+function formatAmount(value, decimals = 6) {
+  const numberValue = Number(value || 0);
+  return Number.isFinite(numberValue) ? numberValue.toFixed(decimals) : (0).toFixed(decimals);
+}
 
 export default function Withdraw() {
   const navigate = useNavigate();
@@ -25,6 +40,7 @@ export default function Withdraw() {
   const [addressLocked, setAddressLocked] = useState(false);
   const [canWithdraw, setCanWithdraw] = useState(true);
   const [withdrawRequirementMessage, setWithdrawRequirementMessage] = useState("");
+  const [withdrawalDayPolicy, setWithdrawalDayPolicy] = useState(null);
   const [withdrawalPolicy, setWithdrawalPolicy] = useState(null);
 
   const [amount, setAmount] = useState("");
@@ -35,10 +51,10 @@ export default function Withdraw() {
   const [sending, setSending] = useState(false);
   const [toast, setToast] = useState("");
 
+  const activeNetwork = PAYMENT_NETWORKS.find((item) => item.code === selectedNetwork) || PAYMENT_NETWORKS[0];
+
   const showToast = useCallback((message) => {
-    if (toastTimerRef.current) {
-      clearTimeout(toastTimerRef.current);
-    }
+    if (toastTimerRef.current) clearTimeout(toastTimerRef.current);
 
     setToast(message);
 
@@ -60,6 +76,7 @@ export default function Withdraw() {
       setAddressLocked(Boolean(data.addressLocked));
       setCanWithdraw(data.canWithdraw !== false);
       setWithdrawRequirementMessage(data.withdrawRequirementMessage || "");
+      setWithdrawalDayPolicy(data.withdrawalDayPolicy || null);
       setWithdrawalPolicy(data.withdrawalPolicy || null);
     } catch (error) {
       showToast(error.message);
@@ -72,9 +89,7 @@ export default function Withdraw() {
     loadWithdrawInfo();
 
     return () => {
-      if (toastTimerRef.current) {
-        clearTimeout(toastTimerRef.current);
-      }
+      if (toastTimerRef.current) clearTimeout(toastTimerRef.current);
     };
   }, [loadWithdrawInfo]);
 
@@ -103,7 +118,7 @@ export default function Withdraw() {
 
   const handleConfirm = async () => {
     if (!canWithdraw) {
-      showToast(t("Debes tener un VIP activo para solicitar retiros."));
+      showToast(t(withdrawRequirementMessage || "No puedes retirar en este momento."));
       return;
     }
 
@@ -117,7 +132,7 @@ export default function Withdraw() {
         securityPassword,
       });
 
-      showToast(t("Solicitud de retiro creada"));
+      showToast(data.message || t("Solicitud de retiro creada"));
 
       setAvailable(data.currentWithdrawable || "0");
       setWithdrawalAddress(data.withdrawalAddress || withdrawalAddress);
@@ -133,25 +148,20 @@ export default function Withdraw() {
   };
 
   return (
-    <div className="page withdraw-page withdraw-compact-page">
+    <div className="page withdraw-exact-page">
       {toast && (
-        <div className="success-toast">
-          <strong>{toast}</strong>
+        <div className="center-simple-toast center-simple-toast-info">
+          <span>{toast}</span>
         </div>
       )}
 
-      <div className="recharge-header withdraw-compact-header">
-        <button className="icon-btn" onClick={() => navigate("/home")}>
+      <div className="withdraw-exact-topbar">
+        <button className="withdraw-exact-back" onClick={() => navigate("/home")}>
           <FiArrowLeft />
         </button>
-
-        <div>
-          <div className="eyebrow">{selectedNetwork}</div>
-          <h2>{t("Retirar")}</h2>
-        </div>
-
+        <h2>{t("Retirar")}</h2>
         <button
-          className="icon-btn ghost-icon"
+          className="withdraw-exact-history"
           type="button"
           onClick={() => navigate("/transactions")}
         >
@@ -159,43 +169,42 @@ export default function Withdraw() {
         </button>
       </div>
 
-      <div className="withdraw-balance-card withdraw-balance-compact">
-        <p>{t("Disponible para retirar")}</p>
-        <div className="withdraw-balance-inline">
-          <strong>{Number(available || 0).toFixed(6)}</strong>
-          <span>USDT</span>
-        </div>
-      </div>
+      <section className="withdraw-exact-balance">
+        <p>{t("Disponible(USDT)")}</p>
+        <strong data-no-translate="true">{formatAmount(available, 6)}</strong>
+      </section>
 
       {!canWithdraw && (
-        <div className="withdraw-vip-required-note">
+        <div className="withdraw-exact-note danger">
           <FiInfo />
-          <span>
-            {t(withdrawRequirementMessage || "Debes tener un VIP activo para solicitar retiros.")}
-          </span>
+          <span>{t(withdrawRequirementMessage || "No puedes retirar en este momento.")}</span>
+        </div>
+      )}
+
+      {canWithdraw && withdrawalDayPolicy?.message && (
+        <div className="withdraw-exact-note success">
+          <FiInfo />
+          <span>{t(withdrawalDayPolicy.message)}</span>
         </div>
       )}
 
       {canWithdraw && policyApplies && (
-        <div className="withdraw-policy-note danger">
+        <div className="withdraw-exact-note danger">
           <FiInfo />
           <span>
-            {t("Actualmente este retiro tiene una reducción del 75% porque superaste el porcentaje de recuperación permitido sin completar la meta de comunidad. Invita 5 personas activas más y se quitará esta restricción. Podrás retirar el 100% con normalidad.")}
-
+            {t("Actualmente este retiro tiene una reducción del 75% porque superaste el porcentaje de recuperación permitido sin completar la meta de comunidad.")}
           </span>
         </div>
       )}
 
-      <div className="panel withdraw-panel withdraw-network-panel">
-        <div className="withdraw-row-title">
-          <h3>{t("Red principal")}</h3>
-        </div>
+      <section className="withdraw-exact-card">
+        <h3>{t("Seleccionar red")}</h3>
 
-        <div className="withdraw-network-list multi-network-list">
+        <div className="withdraw-exact-networks">
           {PAYMENT_NETWORKS.map((network) => (
             <button
               key={network.code}
-              className={`withdraw-network ${selectedNetwork === network.code ? "active" : ""}`}
+              className={`withdraw-exact-network ${selectedNetwork === network.code ? "active" : ""}`}
               type="button"
               onClick={() => {
                 setSelectedNetwork(network.code);
@@ -203,112 +212,106 @@ export default function Withdraw() {
                 setAddressLocked(false);
               }}
             >
-              <span className="bnb-mini-icon">{network.icon}</span>
-              {network.label}
+              <img src={network.icon} alt={network.label} />
+              <span>{network.label}</span>
             </button>
           ))}
         </div>
-      </div>
 
-      <div className="panel withdraw-panel">
-        <h3>{t("Dirección de retiro")}</h3>
-
+        <h3>{t("Retirar dirección")}</h3>
         <input
-          className="withdraw-input"
+          className="withdraw-exact-input"
           value={withdrawalAddress}
           onChange={(e) => setWithdrawalAddress(e.target.value)}
-          placeholder={`${t("Ingrese dirección")} ${selectedNetwork}`}
+          placeholder={t("Pegue o ingrese la dirección")}
           disabled={addressLocked || !canWithdraw}
         />
 
         {addressLocked && (
-          <p className="withdraw-help">
-            {t("Dirección fijada. Después del primer retiro ya no puede cambiarse.")}
+          <p className="withdraw-exact-help">
+            {t("Dirección fijada para esta red. Puedes usar otra dirección en otra red disponible.")}
           </p>
         )}
-      </div>
 
-      <div className="panel withdraw-panel">
-        <h3>{t("Monto de retiro")}</h3>
-
-        <div className="withdraw-amount-box">
+        <h3>{t("Cantidad a retirar")}</h3>
+        <div className="withdraw-exact-amount">
           <input
-            className="withdraw-input amount-input"
+            className="withdraw-exact-input"
             value={amount}
             onChange={(e) => setAmount(e.target.value)}
-            placeholder={t("Ingresa el monto")}
+            placeholder={t("Cantidad")}
             type="number"
             min="0"
             step="0.000001"
             disabled={!canWithdraw}
           />
-
           <button type="button" onClick={handleAll} disabled={!canWithdraw}>
             {t("Todo")}
           </button>
         </div>
 
-        <p className="withdraw-help withdraw-amount-note">
-          {t("Mínimo")} <strong>{minWithdraw.toFixed(2)} USDT</strong> · {t("Comisión retiro")}{" "}
-          <strong>{feePercent}%</strong>
+        <p className="withdraw-exact-limits">
+          {t("Retiro mínimo")}: <b>{Number(minWithdraw || 0).toFixed(2)}USDT</b>{" "}
+          {t("Retiro máximo")}: <b>99999999.00USDT</b>
         </p>
-      </div>
 
-      <div className="panel withdraw-panel">
-        <h3>{t("Contraseña de seguridad")}</h3>
-
-        <div className="password-field">
+        <h3>{t("PIN de seguridad")}</h3>
+        <div className="withdraw-exact-password">
           <input
-            className="withdraw-input"
+            className="withdraw-exact-input"
             value={securityPassword}
             onChange={(e) => setSecurityPassword(e.target.value)}
-            placeholder={t("Contraseña de seguridad")}
+            placeholder={t("PIN de seguridad")}
             type={showPassword ? "text" : "password"}
             disabled={!canWithdraw}
           />
-
-          <button
-            className="eye-btn"
-            type="button"
-            onClick={() => setShowPassword(!showPassword)}
-          >
+          <button type="button" onClick={() => setShowPassword(!showPassword)}>
             {showPassword ? <FiEyeOff /> : <FiEye />}
           </button>
         </div>
-      </div>
 
-      <div className="withdraw-real-row withdraw-real-compact">
-        <span>{policyApplies ? t("Llegada real con reducción") : t("Llegada real")}</span>
-        <strong>{realArrival.toFixed(6)} USDT</strong>
-      </div>
-
-      {policyApplies && amountNumber > 0 && (
-        <div className="withdraw-policy-breakdown">
-          <span>
-            {t("Reducción por meta de invitados")}:{" "}
-            <strong>-{policyReductionAmount.toFixed(6)} USDT</strong>
-          </span>
+        <div className="withdraw-exact-arrival">
+          <span>{t("Usted recibe")}:</span>
+          <strong data-no-translate="true">{formatAmount(realArrival, 6)} USDT</strong>
         </div>
-      )}
 
-      <div className="withdraw-small-note">
-        <FiInfo />
-        {t("Solo puedes solicitar 1 retiro cada 24 horas.")}
-      </div>
+        {policyApplies && amountNumber > 0 && (
+          <div className="withdraw-exact-policy">
+            {t("Reducción por meta de invitados")}: <b>-{formatAmount(policyReductionAmount, 6)} USDT</b>
+          </div>
+        )}
 
-      <button
-        className="primary-btn recharge-main-btn withdraw-confirm-compact"
-        type="button"
-        onClick={handleConfirm}
-        disabled={loading || sending || !canWithdraw}
-      >
-        {!canWithdraw ? t("VIP requerido") : sending ? t("Procesando...") : t("Confirmar retiro")}
-      </button>
+        <button
+          className="withdraw-exact-confirm"
+          type="button"
+          onClick={handleConfirm}
+          disabled={loading || sending || !canWithdraw}
+        >
+          {!canWithdraw ? t("No disponible") : sending ? t("Procesando...") : t("RETIRAR")}
+        </button>
 
-      <div className="withdraw-mini-reminder">
-        <strong>{t("Recordatorio:")}</strong> {t("Solo se pueden retirar las ganancias disponibles;")}{" "}
-        {t("el saldo de recarga/VIP no se considera retirable.")} {t("Verifica que tu dirección pertenezca a la red seleccionada.")}
-      </div>
+        <div className="withdraw-exact-note-simple">
+          <FiInfo />
+          <b>{t("Nota")}</b>
+        </div>
+
+        <div className="withdraw-exact-instructions">
+          <p>
+            {t("Puedes retirar usando BEP20-USDT o POLYGON-USDT.")}
+          </p>
+          <p>
+            {t("Ingresa una dirección que pertenezca exactamente a la red seleccionada.")}
+          </p>
+          <p>1: {t("Retiro mínimo")} {Number(minWithdraw || 0).toFixed(2)} USDT</p>
+          <p>2: {t("Verifica que la dirección pertenezca a la red seleccionada antes de confirmar.")}</p>
+          {withdrawalDayPolicy?.activeVipName && (
+            <p>3: {t("Nivel actual")}: <b>{t(withdrawalDayPolicy.activeVipName)}</b></p>
+          )}
+          {withdrawalDayPolicy?.allowedDaysLabel && (
+            <p>4: {t("Días disponibles para tu nivel")}: <b>{t(withdrawalDayPolicy.allowedDaysLabel)} ({withdrawalDayPolicy.timezone || "UTC"})</b></p>
+          )}
+        </div>
+      </section>
     </div>
   );
 }

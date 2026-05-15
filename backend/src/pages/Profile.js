@@ -1,173 +1,46 @@
-import React, { useCallback, useEffect, useMemo, useState } from "react";
+import React, { useCallback, useState } from "react";
 import { useNavigate } from "react-router-dom";
 import {
-  FiChevronRight,
-  FiCopy,
+  FiArrowRight,
+  FiBarChart2,
   FiCreditCard,
-  FiDollarSign,
-  FiGift,
+  FiCpu,
+  FiHelpCircle,
+  FiInfo,
+  FiLock,
+  FiLogOut,
   FiMessageCircle,
+  FiRefreshCw,
   FiSend,
   FiUser,
   FiUsers,
 } from "react-icons/fi";
-import {
-  getUser,
-  getWithdrawInfo,
-  getPromotionDashboard,
-  getVipStatus,
-  logout,
-} from "../services/authService";
+import { getUser, logout, changePassword } from "../services/authService";
 import { useI18n } from "../i18n/I18nContext";
 
-const TELEGRAM_CHANNEL_URL = "https://t.me/LuvenVIP";
-const TELEGRAM_SUPPORT_URL = "https://t.me/LuvenSupport";
-
-function toNumber(value) {
-  const numberValue = Number(value ?? 0);
-  return Number.isFinite(numberValue) ? numberValue : 0;
-}
-
-function formatUsdt(value) {
-  return toNumber(value).toFixed(2);
-}
-
-async function copyText(text) {
-  if (navigator.clipboard && window.isSecureContext) {
-    await navigator.clipboard.writeText(text);
-    return;
-  }
-
-  const input = document.createElement("textarea");
-  input.value = text;
-  input.style.position = "fixed";
-  input.style.opacity = "0";
-  document.body.appendChild(input);
-  input.focus();
-  input.select();
-  document.execCommand("copy");
-  document.body.removeChild(input);
-}
+const TELEGRAM_SUPPORT_URL = "https://t.me/NiceHashSupport";
+const TELEGRAM_CHANNEL_URL = "https://t.me/NiceHashVIP";
 
 export default function Profile() {
   const navigate = useNavigate();
   const { t } = useI18n();
-
   const [user] = useState(() => getUser());
-  const [withdrawInfo, setWithdrawInfo] = useState(null);
-  const [promotionData, setPromotionData] = useState(null);
-  const [vipData, setVipData] = useState(null);
-  const [loading, setLoading] = useState(true);
   const [toast, setToast] = useState("");
+  const [showPasswordPanel, setShowPasswordPanel] = useState(false);
+  const [showSupportPanel, setShowSupportPanel] = useState(false);
+  const [savingPassword, setSavingPassword] = useState(false);
+  const [passwordForm, setPasswordForm] = useState({
+    currentPassword: "",
+    newPassword: "",
+    confirmPassword: "",
+  });
 
   const showToast = useCallback((message) => {
     setToast(message);
     setTimeout(() => setToast(""), 2600);
   }, []);
 
-  const loadProfile = useCallback(async () => {
-    try {
-      setLoading(true);
-
-      const [withdrawResult, promotionResult, vipResult] =
-        await Promise.allSettled([
-          getWithdrawInfo(),
-          getPromotionDashboard(),
-          getVipStatus(),
-        ]);
-
-      if (withdrawResult.status === "fulfilled") {
-        setWithdrawInfo(withdrawResult.value);
-      }
-
-      if (promotionResult.status === "fulfilled") {
-        setPromotionData(promotionResult.value);
-      }
-
-      if (vipResult.status === "fulfilled") {
-        setVipData(vipResult.value);
-      }
-
-      const hasError = [withdrawResult, promotionResult, vipResult].some(
-        (result) => result.status === "rejected"
-      );
-
-      if (hasError) {
-        showToast(t("Algunos datos no se pudieron cargar."));
-      }
-    } catch (error) {
-      showToast(error.message || t("Error al cargar perfil."));
-    } finally {
-      setLoading(false);
-    }
-  }, [showToast, t]);
-
-  useEffect(() => {
-    loadProfile();
-
-    const handleFocus = () => {
-      loadProfile();
-    };
-
-    window.addEventListener("focus", handleFocus);
-
-    return () => {
-      window.removeEventListener("focus", handleFocus);
-    };
-  }, [loadProfile]);
-
-  const profile = useMemo(() => {
-    const email = user?.email || vipData?.user?.email || "Usuario";
-
-    const referralCode =
-      promotionData?.referralCode ||
-      user?.referral_code ||
-      user?.referralCode ||
-      "------";
-
-    const referralLink =
-      promotionData?.referralLink ||
-      `${window.location.origin}/register?ref=${referralCode}`;
-
-    const withdrawableBalance = toNumber(
-      withdrawInfo?.available ?? vipData?.earningsBalanceUsdt ?? 0
-    );
-
-    const rechargeBalance = toNumber(vipData?.rechargeBalanceUsdt ?? 0);
-
-    const taskTodayIncome = toNumber(vipData?.todayIncomeUsdt ?? 0);
-    const referralTodayIncome = toNumber(promotionData?.todayIncome ?? 0);
-    const todayTotalIncome = taskTodayIncome + referralTodayIncome;
-
-    const totalReferralIncome = toNumber(promotionData?.totalIncome ?? 0);
-    const totalMembers = Number(promotionData?.totalMembers ?? 0);
-    const totalTeamRecharge = toNumber(promotionData?.totalTeamRecharge ?? 0);
-
-    return {
-      email,
-      referralCode,
-      referralLink,
-      withdrawableBalance,
-      rechargeBalance,
-      taskTodayIncome,
-      referralTodayIncome,
-      todayTotalIncome,
-      totalReferralIncome,
-      totalMembers,
-      totalTeamRecharge,
-    };
-  }, [user, withdrawInfo, promotionData, vipData]);
-
-  const handleCopyReferral = async () => {
-    try {
-      await copyText(profile.referralLink);
-      showToast(t("Enlace copiado."));
-    } catch (error) {
-      showToast(t("No se pudo copiar el enlace."));
-    }
-  };
-
-  const openTelegram = (url) => {
+  const openExternal = (url) => {
     window.open(url, "_blank", "noopener,noreferrer");
   };
 
@@ -176,141 +49,171 @@ export default function Profile() {
     navigate("/login");
   };
 
+  const updatePasswordField = (field, value) => {
+    setPasswordForm((prev) => ({ ...prev, [field]: value }));
+  };
+
+  const handleChangePassword = async (event) => {
+    event.preventDefault();
+
+    const currentPassword = passwordForm.currentPassword.trim();
+    const newPassword = passwordForm.newPassword.trim();
+    const confirmPassword = passwordForm.confirmPassword.trim();
+
+    if (!currentPassword || !newPassword || !confirmPassword) {
+      showToast(t("Completa todos los campos."));
+      return;
+    }
+
+    if (newPassword.length < 6) {
+      showToast(t("La nueva contraseña debe tener mínimo 6 caracteres."));
+      return;
+    }
+
+    if (newPassword !== confirmPassword) {
+      showToast(t("Las nuevas contraseñas no coinciden."));
+      return;
+    }
+
+    try {
+      setSavingPassword(true);
+      await changePassword({ currentPassword, newPassword });
+      showToast(t("Contraseña actualizada correctamente."));
+      setPasswordForm({ currentPassword: "", newPassword: "", confirmPassword: "" });
+      setShowPasswordPanel(false);
+    } catch (error) {
+      showToast(error.message || t("No se pudo actualizar la contraseña."));
+    } finally {
+      setSavingPassword(false);
+    }
+  };
+
+  const primaryItems = [
+    { label: t("Depósito"), icon: <FiCreditCard />, action: () => navigate("/recharge") },
+    { label: t("Retirar"), icon: <FiBarChart2 />, action: () => navigate("/withdraw") },
+    { label: t("Transferir"), icon: <FiRefreshCw />, action: () => navigate("/reinvest") },
+    { label: t("Equipo"), icon: <FiUsers />, action: () => navigate("/promotion") },
+  ];
+
+  const secondaryItems = [
+    { label: t("Contraseña"), icon: <FiLock />, action: () => setShowPasswordPanel(true) },
+    { label: t("Acerca de"), icon: <FiInfo />, action: () => navigate("/about") },
+    { label: t("Apoyo"), icon: <FiHelpCircle />, action: () => setShowSupportPanel(true) },
+    { label: t("Cerrar sesión"), icon: <FiLogOut />, action: handleLogout },
+  ];
+
   return (
-    <div className="page profile-page">
+    <div className="page profile-clean-page">
       {toast && (
-        <div className="success-toast">
-          <strong>{toast}</strong>
+        <div className="center-simple-toast center-simple-toast-info">
+          <span>{toast}</span>
         </div>
       )}
 
-      <div className="profile-hero profile-hero-horizontal">
-        <div className="profile-avatar profile-avatar-large">
-          <FiUser />
+      <section className="profile-clean-hero">
+        <div className="profile-clean-topline">
+          <strong>NiceHash</strong>
+          <span>{t("Mi cuenta")}</span>
         </div>
 
-        <div className="profile-info profile-info-right">
-          <span className="eyebrow">{t("Mi cuenta")}</span>
-          <h2>{profile.email}</h2>
-          <p>{t("código de invitación")}: {profile.referralCode}</p>
-        </div>
-      </div>
-
-      {loading && <div className="panel">{t("Cargando datos del perfil...")}</div>}
-
-      <section className="wallet-panel profile-section-card">
-        <div className="profile-section-title">
-          <span className="icon-badge sm tone-blue">
-            <FiCreditCard />
-          </span>
-          <div>
-            <h3>{t("Balance principal")}</h3>
-            <p>{t("Saldo retirable e inversión")}</p>
-          </div>
-        </div>
-
-        <div className="profile-metric-card tone-card-success profile-today-earnings profile-today-inside-balance">
-          <span>{t("Ganancias hoy")}</span>
-          <strong>{formatUsdt(profile.todayTotalIncome)}</strong>
-        </div>
-
-        <div className="wallet-grid profile-balance-grid profile-balance-grid-two">
-          <div
-            className="profile-metric-card tone-card-mint no-metric-icon"
-            onClick={() => navigate("/withdraw")}
-            style={{ cursor: "pointer" }}
-          >
-            <span>{t("Retirable")}</span>
-            <strong>{formatUsdt(profile.withdrawableBalance)} ›</strong>
+        <div className="profile-clean-user-row">
+          <div className="profile-clean-avatar profile-clean-avatar-brand">
+            <FiCpu />
           </div>
 
-          <div
-            className="profile-metric-card tone-card-blue no-metric-icon"
-            onClick={() => navigate("/recharge")}
-            style={{ cursor: "pointer" }}
-          >
-            <span>{t("Inversión")}</span>
-            <strong>{formatUsdt(profile.rechargeBalance)} ›</strong>
+          <div className="profile-clean-user-info">
+            <strong data-no-translate="true">{user?.email || "Usuario"}</strong>
+            <span data-no-translate="true">ID: {user?.referral_code || user?.referralCode || "------"}</span>
           </div>
         </div>
       </section>
 
-      <section className="panel summary-panel profile-section-card">
-        <div className="profile-section-title">
-          <span className="icon-badge sm tone-success">
-            <FiGift />
-          </span>
-          <div>
-            <h3>{t("Rendimiento de referidos")}</h3>
-            <p>{t("Resumen de equipo")}</p>
-          </div>
-        </div>
-
-        <div className="summary-bottom profile-team-grid">
-          <div
-            className="profile-metric-card tone-card-blue"
-            onClick={() => navigate("/promotion")}
-            style={{ cursor: "pointer" }}
-          >
-            <span className="metric-icon"><FiUsers /></span>
-            <b>{profile.totalMembers}</b>
-            <span>{t("Equipo")}</span>
-          </div>
-
-          <div className="profile-metric-card tone-card-lavender">
-            <span className="metric-icon"><FiCreditCard /></span>
-            <b>{formatUsdt(profile.totalTeamRecharge)}</b>
-            <span>{t("Recarga equipo")}</span>
-          </div>
-
-          <div className="profile-metric-card tone-card-mint">
-            <span className="metric-icon"><FiDollarSign /></span>
-            <b>{formatUsdt(profile.totalReferralIncome)}</b>
-            <span>{t("Ingresos ref.")}</span>
-          </div>
-        </div>
+      <section className="profile-action-panel profile-action-panel-primary">
+        {primaryItems.map((item) => (
+          <button key={item.label} type="button" onClick={item.action}>
+            <span>{item.icon}</span>
+            <b>{item.label}</b>
+          </button>
+        ))}
       </section>
 
-      <div className="menu-panel">
-        <div
-          className="menu-row"
-          onClick={handleCopyReferral}
-          style={{ cursor: "pointer" }}
-        >
-          <span>{t("Copiar referido")}</span>
-          <FiCopy />
+      <section className="profile-action-panel profile-action-panel-secondary">
+        {secondaryItems.map((item) => (
+          <button key={item.label} type="button" onClick={item.action}>
+            <span>{item.icon}</span>
+            <b>{item.label}</b>
+          </button>
+        ))}
+      </section>
+
+      {showPasswordPanel && (
+        <div className="profile-modal-backdrop" onClick={() => setShowPasswordPanel(false)}>
+          <form className="profile-password-modal" onSubmit={handleChangePassword} onClick={(e) => e.stopPropagation()}>
+            <h2>{t("Cambiar contraseña")}</h2>
+            <p>{t("Ingresa tu contraseña actual y confirma la nueva contraseña.")}</p>
+
+            <label>
+              <span>{t("Contraseña actual")}</span>
+              <input
+                type="password"
+                value={passwordForm.currentPassword}
+                onChange={(e) => updatePasswordField("currentPassword", e.target.value)}
+                autoComplete="current-password"
+              />
+            </label>
+
+            <label>
+              <span>{t("Nueva contraseña")}</span>
+              <input
+                type="password"
+                value={passwordForm.newPassword}
+                onChange={(e) => updatePasswordField("newPassword", e.target.value)}
+                autoComplete="new-password"
+              />
+            </label>
+
+            <label>
+              <span>{t("Repetir nueva contraseña")}</span>
+              <input
+                type="password"
+                value={passwordForm.confirmPassword}
+                onChange={(e) => updatePasswordField("confirmPassword", e.target.value)}
+                autoComplete="new-password"
+              />
+            </label>
+
+            <div className="profile-password-actions">
+              <button type="button" onClick={() => setShowPasswordPanel(false)}>
+                {t("Cancelar")}
+              </button>
+              <button type="submit" disabled={savingPassword}>
+                {savingPassword ? t("Guardando...") : t("Guardar")}
+              </button>
+            </div>
+          </form>
         </div>
+      )}
 
-        <div
-          className="menu-row"
-          onClick={() => openTelegram(TELEGRAM_CHANNEL_URL)}
-          style={{ cursor: "pointer" }}
-        >
-          <span>{t("Canal oficial")}</span>
+      {showSupportPanel && (
+        <div className="profile-modal-backdrop" onClick={() => setShowSupportPanel(false)}>
+          <div className="profile-support-sheet" onClick={(e) => e.stopPropagation()}>
+            <h2>{t("Soporte")}</h2>
+            <p>{t("Seleccione un método de contacto")}</p>
 
-          <span style={{ display: "flex", alignItems: "center", gap: 6 }}>
-            <FiSend />
-            <FiChevronRight />
-          </span>
+            <button type="button" onClick={() => openExternal(TELEGRAM_SUPPORT_URL)}>
+              <span className="profile-support-icon"><FiSend /></span>
+              <strong>NiceHash</strong>
+              <FiArrowRight />
+            </button>
+
+            <button type="button" onClick={() => openExternal(TELEGRAM_CHANNEL_URL)}>
+              <span className="profile-support-icon"><FiMessageCircle /></span>
+              <strong>NiceHash Customer Service</strong>
+              <FiArrowRight />
+            </button>
+          </div>
         </div>
-
-        <div
-          className="menu-row"
-          onClick={() => openTelegram(TELEGRAM_SUPPORT_URL)}
-          style={{ cursor: "pointer" }}
-        >
-          <span>{t("Soporte Telegram")}</span>
-
-          <span style={{ display: "flex", alignItems: "center", gap: 6 }}>
-            <FiMessageCircle />
-            <FiChevronRight />
-          </span>
-        </div>
-      </div>
-
-      <button className="logout-btn" onClick={handleLogout}>
-        {t("Cerrar sesión")}
-      </button>
+      )}
     </div>
   );
 }

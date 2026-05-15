@@ -1,6 +1,7 @@
 const pool = require("../config/db");
 const { scanWalletNetwork, ensurePendingScanSchema, markOrCreatePendingScanRequest } = require("../services/depositScannerService");
 const { getPaymentNetwork, listPaymentNetworks } = require("../utils/paymentNetworks");
+const { ensureNotBanned, logSecurityEvent } = require("../services/securityService");
 
 function getCooldownSeconds() {
   return Number(process.env.DEPOSIT_SCAN_COOLDOWN_SECONDS || 60);
@@ -44,6 +45,19 @@ async function scanMyDeposits(req, res) {
   const userId = req.user.userId;
 
   try {
+    const restriction = await ensureNotBanned(pool, userId, "verificar recargas");
+    if (!restriction.ok) {
+      await logSecurityEvent(pool, {
+        userId,
+        eventType: "DEPOSIT_SCAN_BLOCKED_BANNED",
+        reason: restriction.message,
+      });
+      return res.status(restriction.statusCode || 403).json({
+        message: restriction.message,
+        userSecurity: restriction.userSecurity,
+      });
+    }
+
     const network = getPaymentNetwork(req.body?.network || req.query?.network || "BEP20-USDT", {
       deposit: true,
     });

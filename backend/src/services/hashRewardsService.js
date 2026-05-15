@@ -84,6 +84,8 @@ async function syncValidReferralPoints(clientOrPool, userId) {
       FROM users r
       LEFT JOIN mining_accounts ma ON ma.user_id = r.id AND ma.status IN ('active', 'completed')
       WHERE r.referred_by_id = $1
+        AND COALESCE(r.is_banned, false) = false
+        AND COALESCE(r.is_suspicious, false) = false
       GROUP BY r.id
     ), upsert_valid AS (
       INSERT INTO hash_point_referrals
@@ -179,6 +181,8 @@ async function getHashRewardsStatusForUser(clientOrPool, userId, options = {}) {
       FROM users r
       LEFT JOIN mining_accounts ma ON ma.user_id = r.id AND ma.status IN ('active', 'completed')
       WHERE r.referred_by_id = $1
+        AND COALESCE(r.is_banned, false) = false
+        AND COALESCE(r.is_suspicious, false) = false
       GROUP BY r.id
     )
     SELECT

@@ -5,6 +5,7 @@ const pool = require("../config/db");
 const { addAlchemyAddressToNetworkWebhooks } = require("../services/alchemyWebhookService");
 
 const { generateUniqueReferralCode } = require("../utils/referralUtil");
+const { getClientIp, ensureSecuritySchema, captureRegisterIp, captureLoginIp } = require("../services/securityService");
 
 
 const {
@@ -64,6 +65,8 @@ async function register(req, res) {
 
     try {
         await client.query("BEGIN");
+        await ensureSecuritySchema(client);
+        const requestIp = getClientIp(req);
 
         const existingUser = await client.query(
             "SELECT id FROM users WHERE email = $1",
@@ -159,6 +162,8 @@ async function register(req, res) {
 
         const user = newUser.rows[0];
 
+        await captureRegisterIp(client, user.id, requestIp);
+
         const generatedWallet = generateBep20Wallet();
 
         // Una misma wallet EVM puede recibir fondos en BSC y Polygon.
@@ -249,9 +254,11 @@ async function login(req, res) {
     }
 
     try {
+        await ensureSecuritySchema(pool);
+        const requestIp = getClientIp(req);
         const userResult = await pool.query(
             `
-      SELECT id, email, password_hash, referral_code, created_at
+      SELECT id, email, password_hash, referral_code, created_at, is_banned, banned_reason, is_suspicious, suspicious_reason
       FROM users
       WHERE email = $1
       `,
@@ -273,6 +280,9 @@ async function login(req, res) {
                 message: "Credenciales incorrectas.",
             });
         }
+
+        await captureLoginIp(pool, user.id, requestIp);
+
         const walletResult = await pool.query(
             `
             SELECT id, network, address, public_key
@@ -333,6 +343,8 @@ async function changePassword(req, res) {
     }
 
     try {
+        await ensureSecuritySchema(pool);
+        const requestIp = getClientIp(req);
         const userResult = await pool.query(
             `
             SELECT id, email, password_hash

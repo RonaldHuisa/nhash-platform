@@ -8,6 +8,7 @@ const {
     getNetworkWithdrawFeePercent,
     isValidEvmAddress,
 } = require("../utils/paymentNetworks");
+const { ensureNotBanned, logSecurityEvent } = require("../services/securityService");
 
 const WITHDRAW_FEE_PERCENT = 8;
 const MIN_WITHDRAW_USDT = 1;
@@ -127,6 +128,8 @@ async function getActiveDirectInvitesCount(client, userId) {
         SELECT COUNT(DISTINCT inv.id)::int AS active_direct_invites
         FROM users inv
         WHERE inv.referred_by_id = $1
+        AND COALESCE(inv.is_banned, false) = false
+        AND COALESCE(inv.is_suspicious, false) = false
         AND EXISTS (
             SELECT 1
             FROM mining_accounts ma
@@ -317,7 +320,11 @@ async function getWithdrawInfo(req, res) {
             `
             SELECT 
                 u.id, 
-                u.withdrawable_usdt, 
+                u.withdrawable_usdt,
+                COALESCE(u.is_suspicious, false) AS is_suspicious,
+                u.suspicious_reason,
+                COALESCE(u.is_banned, false) AS is_banned,
+                u.banned_reason, 
                 CASE
                     WHEN $2 = 'BEP20-USDT' THEN COALESCE(uwa.withdrawal_address, u.withdrawal_address_bep20)
                     ELSE uwa.withdrawal_address
@@ -359,6 +366,13 @@ async function getWithdrawInfo(req, res) {
 
         const user = result.rows[0];
 
+        const userSecurity = {
+            isSuspicious: Boolean(user.is_suspicious),
+            suspiciousReason: user.suspicious_reason || null,
+            isBanned: Boolean(user.is_banned),
+            bannedReason: user.banned_reason || null,
+        };
+
         const activeDirectInvites = await getActiveDirectInvitesCount(pool, userId);
         const policyTotals = await getWithdrawalPolicyTotals(pool, userId);
 
@@ -373,8 +387,10 @@ async function getWithdrawInfo(req, res) {
         const activeInvestmentUsdt = Number(user.active_investment_usdt || 0);
         const hasActiveInvestment = activeInvestmentUsdt >= 5;
         const withdrawDayPolicy = buildWithdrawDayPolicy(user.active_vip_level);
-        const canWithdraw = hasActiveInvestment && withdrawDayPolicy.allowedToday;
-        const withdrawRequirementMessage = !hasActiveInvestment
+        const canWithdraw = hasActiveInvestment && withdrawDayPolicy.allowedToday && !userSecurity.isBanned;
+        const withdrawRequirementMessage = userSecurity.isBanned
+            ? `Tu cuenta se encuentra restringida temporalmente. No puedes solicitar retiros. Contacta con soporte.`
+            : !hasActiveInvestment
             ? `${withdrawDayPolicy.message} Debes invertir mínimo 5 USDT para habilitar los retiros.`
             : withdrawDayPolicy.message;
 
@@ -396,6 +412,7 @@ async function getWithdrawInfo(req, res) {
             activeVipName: user.active_vip_name || withdrawDayPolicy.activeVipName,
             withdrawRequirementMessage,
             withdrawalPolicy,
+            userSecurity,
         });
     } catch (error) {
         console.error("GET WITHDRAW INFO ERROR:", error);
@@ -549,7 +566,11 @@ async function createWithdrawRequest(req, res) {
             SELECT 
                 u.id, 
                 u.password_hash AS password,
-                u.withdrawable_usdt, 
+                u.withdrawable_usdt,
+                COALESCE(u.is_suspicious, false) AS is_suspicious,
+                u.suspicious_reason,
+                COALESCE(u.is_banned, false) AS is_banned,
+                u.banned_reason, 
                 CASE
                     WHEN $2 = 'BEP20-USDT' THEN COALESCE(uwa.withdrawal_address, u.withdrawal_address_bep20)
                     ELSE uwa.withdrawal_address
@@ -592,6 +613,20 @@ async function createWithdrawRequest(req, res) {
         }
 
         const user = userResult.rows[0];
+
+        const restriction = await ensureNotBanned(client, userId, "solicitar retiros");
+        if (!restriction.ok) {
+            await logSecurityEvent(client, {
+                userId,
+                eventType: "WITHDRAW_BLOCKED_BANNED",
+                reason: restriction.message,
+            });
+            await client.query("ROLLBACK");
+            return res.status(restriction.statusCode || 403).json({
+                message: restriction.message,
+                userSecurity: restriction.userSecurity,
+            });
+        }
 
         if (Number(user.active_investment_usdt || 0) < 5) {
             await client.query("ROLLBACK");

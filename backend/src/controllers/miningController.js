@@ -5,6 +5,7 @@ const {
   refreshMiningAccountForUser,
   getMiningDashboard,
 } = require("../services/miningService");
+const { ensureNotBanned, logSecurityEvent } = require("../services/securityService");
 
 async function getMiningStatus(req, res) {
   try {
@@ -25,6 +26,21 @@ async function claimMiningReward(req, res) {
 
   try {
     await client.query("BEGIN");
+
+    const restriction = await ensureNotBanned(client, userId, "completar minería");
+    if (!restriction.ok) {
+      await logSecurityEvent(client, {
+        userId,
+        eventType: "MINING_BLOCKED_BANNED",
+        reason: restriction.message,
+      });
+      await client.query("ROLLBACK");
+      return res.status(restriction.statusCode || 403).json({
+        message: restriction.message,
+        userSecurity: restriction.userSecurity,
+      });
+    }
+
     await ensureMiningSchema(client);
 
     const refreshed = await refreshMiningAccountForUser(client, req.user);

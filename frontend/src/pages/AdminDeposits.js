@@ -36,6 +36,7 @@ function statusLabel(status) {
     failed: "Fallido",
     gas_pending: "Gas enviado",
     gas_ready: "Gas listo",
+    gas_short: "Gas insuficiente",
     collecting: "Recolectando",
     swept: "Recolectado",
   };
@@ -43,10 +44,23 @@ function statusLabel(status) {
   return map[status] || status || "Pendiente";
 }
 
+function isManualAdminDeposit(item) {
+  const sweepStatus = String(item?.sweep_status || "").toLowerCase();
+  const txHash = String(item?.tx_hash || "").toLowerCase();
+  const tokenContract = String(item?.token_contract || "").toLowerCase();
+
+  return (
+    sweepStatus === "manual" ||
+    sweepStatus === "hidden_manual" ||
+    txHash.startsWith("manual_admin_recharge_") ||
+    tokenContract === "manual-admin-credit"
+  );
+}
+
 function statusClass(status) {
   if (status === "swept") return "success";
   if (status === "failed") return "danger";
-  if (status === "gas_pending" || status === "collecting") return "warning";
+  if (status === "gas_pending" || status === "collecting" || status === "gas_short") return "warning";
   if (status === "gas_ready") return "blue";
   return "neutral";
 }
@@ -85,12 +99,12 @@ export default function AdminDeposits() {
   }, [loadDeposits]);
 
   const activeDeposits = useMemo(
-    () => deposits.filter((item) => item.sweep_status !== "swept"),
+    () => deposits.filter((item) => !isManualAdminDeposit(item) && item.sweep_status !== "swept"),
     [deposits]
   );
 
   const historyDeposits = useMemo(
-    () => deposits.filter((item) => item.sweep_status === "swept"),
+    () => deposits.filter((item) => !isManualAdminDeposit(item) && item.sweep_status === "swept"),
     [deposits]
   );
 
@@ -306,7 +320,7 @@ export default function AdminDeposits() {
                 onClick={() => handleSendGas(item.id)}
               >
                 <FiZap />
-                {isBusy ? "Procesando..." : "Enviar gas"}
+                {isBusy ? "Procesando..." : item.bnb_topup_tx_hash ? "Enviar gas adicional" : "Enviar gas"}
               </button>
 
               <button
@@ -377,7 +391,7 @@ export default function AdminDeposits() {
                 {pendingCollectId && !canConfirmCollection && (
                   <div className="admin-modal-warning">
                     No se puede recolectar todavía. La wallet del usuario no tiene gas confirmado suficiente.
-                    Presiona "Enviar gas", espera confirmación y luego usa "Verificar".
+                    En Polygon el precio del gas puede variar; presiona "Enviar gas adicional", espera confirmación y luego usa "Verificar".
                   </div>
                 )}
 

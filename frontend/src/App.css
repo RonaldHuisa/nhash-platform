@@ -16621,3 +16621,533 @@ button:hover,
     grid-template-columns: 1fr;
   }
 }
+
+
+/* =========================================================
+   ADMIN READABILITY HARDENING
+   Fuerza contraste y legibilidad en todas las pantallas admin
+========================================================= */
+.admin-page,
+.admin-deposits-page,
+.admin-status-page,
+.admin-security-page {
+  --admin-surface-0: #101116;
+  --admin-surface-1: #151821;
+  --admin-surface-2: #1b1f2a;
+  --admin-surface-3: #202636;
+  --admin-line-1: rgba(246, 183, 60, 0.18);
+  --admin-line-2: rgba(246, 183, 60, 0.28);
+  --admin-text-1: #f4efe4;
+  --admin-text-2: #ead7a2;
+  --admin-text-3: #c8cedd;
+  --admin-text-4: #9ea7ba;
+  --admin-success-bg: rgba(82, 211, 170, 0.16);
+  --admin-success-text: #79f2c8;
+  --admin-warning-bg: rgba(246, 183, 60, 0.18);
+  --admin-warning-text: #ffd36a;
+  --admin-danger-bg: rgba(239, 68, 68, 0.18);
+  --admin-danger-text: #ffb4ae;
+  --admin-blue-bg: rgba(59, 130, 246, 0.18);
+  --admin-blue-text: #8cb8ff;
+}
+
+.admin-page .panel,
+.admin-deposits-page .panel,
+.admin-status-page .panel,
+.admin-security-page .panel,
+.admin-page .admin-empty,
+.admin-deposits-page .admin-empty,
+.admin-status-page .admin-empty,
+.admin-security-page .admin-empty,
+.admin-page .admin-withdraw-card,
+.admin-page .admin-status-card,
+.admin-page .admin-status-main-card,
+.admin-page .admin-status-section,
+.admin-page .admin-deposit-card,
+.admin-page .admin-modal-card,
+.admin-page .admin-security-card,
+.admin-deposits-page .admin-withdraw-card,
+.admin-deposits-page .admin-status-card,
+.admin-deposits-page .admin-status-main-card,
+.admin-deposits-page .admin-status-section,
+.admin-deposits-page .admin-deposit-card,
+.admin-deposits-page .admin-modal-card,
+.admin-deposits-page .admin-security-card,
+.admin-status-page .admin-withdraw-card,
+.admin-status-page .admin-status-card,
+.admin-status-page .admin-status-main-card,
+.admin-status-page .admin-status-section,
+.admin-status-page .admin-deposit-card,
+.admin-status-page .admin-modal-card,
+.admin-status-page .admin-security-card,
+.admin-security-page .admin-withdraw-card,
+.admin-security-page .admin-status-card,
+.admin-security-page .admin-status-main-card,
+.admin-security-page .admin-status-section,
+.admin-security-page .admin-deposit-card,
+.admin-security-page .admin-modal-card,
+.admin-security-page .admin-security-card {
+  background: linear-gradient(180deg, var(--admin-surface-2) 0%, var(--admin-surface-1) 100%) !important;
+  border-color: var(--admin-line-1) !important;
+  color: var(--admin-text-1) !important;
+  box-shadow: 0 18px 34px rgba(0, 0, 0, 0.24) !important;
+}
+
+.admin-page h1,
+.admin-page h2,
+.admin-page h3,
+.admin-page h4,
+.admin-deposits-page h1,
+.admin-deposits-page h2,
+.admin-deposits-page h3,
+.admin-deposits-page h4,
+.admin-status-page h1,
+.admin-status-page h2,
+.admin-status-page h3,
+.admin-status-page h4,
+.admin-security-page h1,
+.admin-security-page h2,
+.admin-security-page h3,
+.admin-security-page h4,
+.admin-page .eyebrow,
+.admin-deposits-page .eyebrow,
+.admin-status-page .eyebrow,
+.admin-security-page .eyebrow {
+  color: var(--admin-text-1) !important;
+}
+
+.admin-page p,
+.admin-page small,
+.admin-deposits-page p,
+.admin-deposits-page small,
+.admin-status-page p,
+.admin-status-page small,
+.admin-security-page p,
+.admin-security-page small,
+.admin-page .admin-header p,
+.admin-page .admin-card-top p,
+.admin-page .admin-status-section-title p,
+.admin-page .admin-status-card p,
+.admin-page .admin-deposit-top p,
+.admin-page .admin-security-card-top p,
+.admin-page .admin-security-note,
+.admin-page .admin-deposit-help p,
+.admin-deposits-page .admin-header p,
+.admin-deposits-page .admin-card-top p,
+.admin-deposits-page .admin-status-section-title p,
+.admin-deposits-page .admin-status-card p,
+.admin-deposits-page .admin-deposit-top p,
+.admin-deposits-page .admin-security-card-top p,
+.admin-deposits-page .admin-security-note,
+.admin-deposits-page .admin-deposit-help p,
+.admin-status-page .admin-header p,
+.admin-status-page .admin-card-top p,
+.admin-status-page .admin-status-section-title p,
+.admin-status-page .admin-status-card p,
+.admin-status-page .admin-deposit-top p,
+.admin-status-page .admin-security-card-top p,
+.admin-status-page .admin-security-note,
+.admin-status-page .admin-deposit-help p,
+.admin-security-page .admin-header p,
+.admin-security-page .admin-card-top p,
+.admin-security-page .admin-status-section-title p,
+.admin-security-page .admin-status-card p,
+.admin-security-page .admin-deposit-top p,
+.admin-security-page .admin-security-card-top p,
+.admin-security-page .admin-security-note,
+.admin-security-page .admin-deposit-help p {
+  color: var(--admin-text-3) !important;
+}
+
+.admin-page .admin-info-grid div,
+.admin-page .admin-address-box,
+.admin-page .admin-status-main-grid div,
+.admin-page .admin-status-list div,
+.admin-page .admin-deposit-grid div,
+.admin-page .admin-modal-grid div,
+.admin-page .admin-deposit-address,
+.admin-page .admin-modal-address,
+.admin-page .admin-history-line,
+.admin-page .admin-security-grid div,
+.admin-page .admin-security-stats article,
+.admin-page .admin-deposit-help,
+.admin-deposits-page .admin-info-grid div,
+.admin-deposits-page .admin-address-box,
+.admin-deposits-page .admin-status-main-grid div,
+.admin-deposits-page .admin-status-list div,
+.admin-deposits-page .admin-deposit-grid div,
+.admin-deposits-page .admin-modal-grid div,
+.admin-deposits-page .admin-deposit-address,
+.admin-deposits-page .admin-modal-address,
+.admin-deposits-page .admin-history-line,
+.admin-deposits-page .admin-security-grid div,
+.admin-deposits-page .admin-security-stats article,
+.admin-deposits-page .admin-deposit-help,
+.admin-status-page .admin-info-grid div,
+.admin-status-page .admin-address-box,
+.admin-status-page .admin-status-main-grid div,
+.admin-status-page .admin-status-list div,
+.admin-status-page .admin-deposit-grid div,
+.admin-status-page .admin-modal-grid div,
+.admin-status-page .admin-deposit-address,
+.admin-status-page .admin-modal-address,
+.admin-status-page .admin-history-line,
+.admin-status-page .admin-security-grid div,
+.admin-status-page .admin-security-stats article,
+.admin-status-page .admin-deposit-help,
+.admin-security-page .admin-info-grid div,
+.admin-security-page .admin-address-box,
+.admin-security-page .admin-status-main-grid div,
+.admin-security-page .admin-status-list div,
+.admin-security-page .admin-deposit-grid div,
+.admin-security-page .admin-modal-grid div,
+.admin-security-page .admin-deposit-address,
+.admin-security-page .admin-modal-address,
+.admin-security-page .admin-history-line,
+.admin-security-page .admin-security-grid div,
+.admin-security-page .admin-security-stats article,
+.admin-security-page .admin-deposit-help {
+  background: linear-gradient(180deg, var(--admin-surface-3) 0%, #191d27 100%) !important;
+  border: 1px solid var(--admin-line-1) !important;
+  color: var(--admin-text-1) !important;
+}
+
+.admin-page .admin-info-grid span,
+.admin-page .admin-address-box span,
+.admin-page .admin-status-main-grid span,
+.admin-page .admin-status-list span,
+.admin-page .admin-deposit-grid span,
+.admin-page .admin-modal-grid span,
+.admin-page .admin-deposit-address span,
+.admin-page .admin-modal-address span,
+.admin-page .admin-history-line span,
+.admin-page .admin-security-grid span,
+.admin-page .admin-security-stats span,
+.admin-deposits-page .admin-info-grid span,
+.admin-deposits-page .admin-address-box span,
+.admin-deposits-page .admin-status-main-grid span,
+.admin-deposits-page .admin-status-list span,
+.admin-deposits-page .admin-deposit-grid span,
+.admin-deposits-page .admin-modal-grid span,
+.admin-deposits-page .admin-deposit-address span,
+.admin-deposits-page .admin-modal-address span,
+.admin-deposits-page .admin-history-line span,
+.admin-deposits-page .admin-security-grid span,
+.admin-deposits-page .admin-security-stats span,
+.admin-status-page .admin-info-grid span,
+.admin-status-page .admin-address-box span,
+.admin-status-page .admin-status-main-grid span,
+.admin-status-page .admin-status-list span,
+.admin-status-page .admin-deposit-grid span,
+.admin-status-page .admin-modal-grid span,
+.admin-status-page .admin-deposit-address span,
+.admin-status-page .admin-modal-address span,
+.admin-status-page .admin-history-line span,
+.admin-status-page .admin-security-grid span,
+.admin-status-page .admin-security-stats span,
+.admin-security-page .admin-info-grid span,
+.admin-security-page .admin-address-box span,
+.admin-security-page .admin-status-main-grid span,
+.admin-security-page .admin-status-list span,
+.admin-security-page .admin-deposit-grid span,
+.admin-security-page .admin-modal-grid span,
+.admin-security-page .admin-deposit-address span,
+.admin-security-page .admin-modal-address span,
+.admin-security-page .admin-history-line span,
+.admin-security-page .admin-security-grid span,
+.admin-security-page .admin-security-stats span {
+  color: var(--admin-text-4) !important;
+}
+
+.admin-page .admin-info-grid strong,
+.admin-page .admin-address-box p,
+.admin-page .admin-status-main-grid strong,
+.admin-page .admin-status-list strong,
+.admin-page .admin-deposit-grid strong,
+.admin-page .admin-modal-grid strong,
+.admin-page .admin-deposit-address p,
+.admin-page .admin-modal-address p,
+.admin-page .admin-history-line strong,
+.admin-page .admin-security-grid strong,
+.admin-page .admin-security-stats strong,
+.admin-page .admin-deposit-hashes span,
+.admin-deposits-page .admin-info-grid strong,
+.admin-deposits-page .admin-address-box p,
+.admin-deposits-page .admin-status-main-grid strong,
+.admin-deposits-page .admin-status-list strong,
+.admin-deposits-page .admin-deposit-grid strong,
+.admin-deposits-page .admin-modal-grid strong,
+.admin-deposits-page .admin-deposit-address p,
+.admin-deposits-page .admin-modal-address p,
+.admin-deposits-page .admin-history-line strong,
+.admin-deposits-page .admin-security-grid strong,
+.admin-deposits-page .admin-security-stats strong,
+.admin-deposits-page .admin-deposit-hashes span,
+.admin-status-page .admin-info-grid strong,
+.admin-status-page .admin-address-box p,
+.admin-status-page .admin-status-main-grid strong,
+.admin-status-page .admin-status-list strong,
+.admin-status-page .admin-deposit-grid strong,
+.admin-status-page .admin-modal-grid strong,
+.admin-status-page .admin-deposit-address p,
+.admin-status-page .admin-modal-address p,
+.admin-status-page .admin-history-line strong,
+.admin-status-page .admin-security-grid strong,
+.admin-status-page .admin-security-stats strong,
+.admin-status-page .admin-deposit-hashes span,
+.admin-security-page .admin-info-grid strong,
+.admin-security-page .admin-address-box p,
+.admin-security-page .admin-status-main-grid strong,
+.admin-security-page .admin-status-list strong,
+.admin-security-page .admin-deposit-grid strong,
+.admin-security-page .admin-modal-grid strong,
+.admin-security-page .admin-deposit-address p,
+.admin-security-page .admin-modal-address p,
+.admin-security-page .admin-history-line strong,
+.admin-security-page .admin-security-grid strong,
+.admin-security-page .admin-security-stats strong,
+.admin-security-page .admin-deposit-hashes span {
+  color: var(--admin-text-2) !important;
+}
+
+.admin-page .admin-deposit-help strong,
+.admin-page .admin-status-section-title h3,
+.admin-page .admin-section-title h2,
+.admin-page .admin-security-header h2,
+.admin-page .admin-status-header h2,
+.admin-deposits-page .admin-deposit-help strong,
+.admin-deposits-page .admin-status-section-title h3,
+.admin-deposits-page .admin-section-title h2,
+.admin-deposits-page .admin-security-header h2,
+.admin-deposits-page .admin-status-header h2,
+.admin-status-page .admin-deposit-help strong,
+.admin-status-page .admin-status-section-title h3,
+.admin-status-page .admin-section-title h2,
+.admin-status-page .admin-security-header h2,
+.admin-status-page .admin-status-header h2,
+.admin-security-page .admin-deposit-help strong,
+.admin-security-page .admin-status-section-title h3,
+.admin-security-page .admin-section-title h2,
+.admin-security-page .admin-security-header h2,
+.admin-security-page .admin-status-header h2 {
+  color: var(--admin-text-1) !important;
+}
+
+.admin-page .admin-status-small-action,
+.admin-page .admin-history-toggle,
+.admin-page .admin-security-tabs button,
+.admin-deposits-page .admin-status-small-action,
+.admin-deposits-page .admin-history-toggle,
+.admin-deposits-page .admin-security-tabs button,
+.admin-status-page .admin-status-small-action,
+.admin-status-page .admin-history-toggle,
+.admin-status-page .admin-security-tabs button,
+.admin-security-page .admin-status-small-action,
+.admin-security-page .admin-history-toggle,
+.admin-security-page .admin-security-tabs button {
+  background: rgba(246, 183, 60, 0.10) !important;
+  border: 1px solid var(--admin-line-2) !important;
+  color: var(--admin-text-2) !important;
+}
+
+.admin-page .admin-history-toggle.active,
+.admin-page .admin-security-tabs button.active,
+.admin-deposits-page .admin-history-toggle.active,
+.admin-deposits-page .admin-security-tabs button.active,
+.admin-status-page .admin-history-toggle.active,
+.admin-status-page .admin-security-tabs button.active,
+.admin-security-page .admin-history-toggle.active,
+.admin-security-page .admin-security-tabs button.active {
+  background: linear-gradient(135deg, #ffd36a 0%, #f6b73c 50%, #ff9b34 100%) !important;
+  border-color: rgba(246, 183, 60, 0.45) !important;
+  color: #16120a !important;
+}
+
+.admin-page .admin-deposit-status.neutral,
+.admin-deposits-page .admin-deposit-status.neutral,
+.admin-status-page .admin-deposit-status.neutral,
+.admin-security-page .admin-deposit-status.neutral {
+  background: rgba(158, 167, 186, 0.16) !important;
+  color: #d7ddeb !important;
+}
+
+.admin-page .admin-deposit-status.success,
+.admin-deposits-page .admin-deposit-status.success,
+.admin-status-page .admin-deposit-status.success,
+.admin-security-page .admin-deposit-status.success,
+.admin-page .status-paid,
+.admin-deposits-page .status-paid,
+.admin-status-page .status-paid,
+.admin-security-page .status-paid {
+  background: var(--admin-success-bg) !important;
+  color: var(--admin-success-text) !important;
+  border: 1px solid rgba(82, 211, 170, 0.22) !important;
+}
+
+.admin-page .admin-deposit-status.warning,
+.admin-deposits-page .admin-deposit-status.warning,
+.admin-status-page .admin-deposit-status.warning,
+.admin-security-page .admin-deposit-status.warning,
+.admin-page .status-pending,
+.admin-deposits-page .status-pending,
+.admin-status-page .status-pending,
+.admin-security-page .status-pending,
+.admin-page .risk-pill.review,
+.admin-page .risk-pill.suspicious,
+.admin-deposits-page .risk-pill.review,
+.admin-deposits-page .risk-pill.suspicious,
+.admin-status-page .risk-pill.review,
+.admin-status-page .risk-pill.suspicious,
+.admin-security-page .risk-pill.review,
+.admin-security-page .risk-pill.suspicious {
+  background: var(--admin-warning-bg) !important;
+  color: var(--admin-warning-text) !important;
+  border: 1px solid rgba(246, 183, 60, 0.22) !important;
+}
+
+.admin-page .admin-deposit-status.danger,
+.admin-deposits-page .admin-deposit-status.danger,
+.admin-status-page .admin-deposit-status.danger,
+.admin-security-page .admin-deposit-status.danger,
+.admin-page .risk-pill.banned,
+.admin-deposits-page .risk-pill.banned,
+.admin-status-page .risk-pill.banned,
+.admin-security-page .risk-pill.banned {
+  background: var(--admin-danger-bg) !important;
+  color: var(--admin-danger-text) !important;
+  border: 1px solid rgba(239, 68, 68, 0.22) !important;
+}
+
+.admin-page .admin-deposit-status.blue,
+.admin-deposits-page .admin-deposit-status.blue,
+.admin-status-page .admin-deposit-status.blue,
+.admin-security-page .admin-deposit-status.blue,
+.admin-page .risk-pill,
+.admin-deposits-page .risk-pill,
+.admin-status-page .risk-pill,
+.admin-security-page .risk-pill {
+  background: var(--admin-blue-bg) !important;
+  color: var(--admin-blue-text) !important;
+  border: 1px solid rgba(59, 130, 246, 0.22) !important;
+}
+
+.admin-page .admin-security-card.suspicious,
+.admin-page .admin-security-card.review,
+.admin-deposits-page .admin-security-card.suspicious,
+.admin-deposits-page .admin-security-card.review,
+.admin-status-page .admin-security-card.suspicious,
+.admin-status-page .admin-security-card.review,
+.admin-security-page .admin-security-card.suspicious,
+.admin-security-page .admin-security-card.review {
+  background: linear-gradient(180deg, rgba(246, 183, 60, 0.13) 0%, var(--admin-surface-1) 100%) !important;
+  border-color: rgba(246, 183, 60, 0.28) !important;
+}
+
+.admin-page .admin-security-card.banned,
+.admin-deposits-page .admin-security-card.banned,
+.admin-status-page .admin-security-card.banned,
+.admin-security-page .admin-security-card.banned {
+  background: linear-gradient(180deg, rgba(239, 68, 68, 0.12) 0%, var(--admin-surface-1) 100%) !important;
+  border-color: rgba(239, 68, 68, 0.24) !important;
+}
+
+.admin-page .admin-security-note,
+.admin-deposits-page .admin-security-note,
+.admin-status-page .admin-security-note,
+.admin-security-page .admin-security-note,
+.admin-page .admin-status-loading,
+.admin-page .admin-status-alert,
+.admin-deposits-page .admin-status-loading,
+.admin-deposits-page .admin-status-alert,
+.admin-status-page .admin-status-loading,
+.admin-status-page .admin-status-alert,
+.admin-security-page .admin-status-loading,
+.admin-security-page .admin-status-alert {
+  background: rgba(255, 255, 255, 0.04) !important;
+  border-color: var(--admin-line-1) !important;
+  color: var(--admin-text-3) !important;
+}
+
+.admin-page .admin-status-alert,
+.admin-deposits-page .admin-status-alert,
+.admin-status-page .admin-status-alert,
+.admin-security-page .admin-status-alert {
+  background: rgba(239, 68, 68, 0.12) !important;
+  border-color: rgba(239, 68, 68, 0.24) !important;
+  color: var(--admin-danger-text) !important;
+}
+
+.admin-page .admin-modal-warning,
+.admin-deposits-page .admin-modal-warning,
+.admin-status-page .admin-modal-warning,
+.admin-security-page .admin-modal-warning {
+  background: rgba(246, 183, 60, 0.12) !important;
+  border-color: rgba(246, 183, 60, 0.26) !important;
+  color: var(--admin-text-2) !important;
+}
+
+.admin-page .admin-modal-backdrop,
+.admin-page .admin-security-modal-backdrop,
+.admin-deposits-page .admin-modal-backdrop,
+.admin-deposits-page .admin-security-modal-backdrop,
+.admin-status-page .admin-modal-backdrop,
+.admin-status-page .admin-security-modal-backdrop,
+.admin-security-page .admin-modal-backdrop,
+.admin-security-page .admin-security-modal-backdrop {
+  backdrop-filter: blur(4px) !important;
+}
+
+.admin-page .admin-modal-card,
+.admin-page .admin-security-modal,
+.admin-deposits-page .admin-modal-card,
+.admin-deposits-page .admin-security-modal,
+.admin-status-page .admin-modal-card,
+.admin-status-page .admin-security-modal,
+.admin-security-page .admin-modal-card,
+.admin-security-page .admin-security-modal {
+  background: linear-gradient(180deg, #171a23 0%, #11141c 100%) !important;
+  border: 1px solid var(--admin-line-1) !important;
+  color: var(--admin-text-1) !important;
+}
+
+.admin-page .admin-modal-close,
+.admin-page .admin-security-modal-title button,
+.admin-deposits-page .admin-modal-close,
+.admin-deposits-page .admin-security-modal-title button,
+.admin-status-page .admin-modal-close,
+.admin-status-page .admin-security-modal-title button,
+.admin-security-page .admin-modal-close,
+.admin-security-page .admin-security-modal-title button {
+  background: rgba(255, 255, 255, 0.08) !important;
+  color: var(--admin-text-1) !important;
+  border: 1px solid rgba(255, 255, 255, 0.06) !important;
+}
+
+.admin-page .admin-deposit-actions button:disabled,
+.admin-page .admin-security-actions button:disabled,
+.admin-page .admin-approve-btn:disabled,
+.admin-deposits-page .admin-deposit-actions button:disabled,
+.admin-deposits-page .admin-security-actions button:disabled,
+.admin-deposits-page .admin-approve-btn:disabled,
+.admin-status-page .admin-deposit-actions button:disabled,
+.admin-status-page .admin-security-actions button:disabled,
+.admin-status-page .admin-approve-btn:disabled,
+.admin-security-page .admin-deposit-actions button:disabled,
+.admin-security-page .admin-security-actions button:disabled,
+.admin-security-page .admin-approve-btn:disabled {
+  background: rgba(255, 255, 255, 0.10) !important;
+  color: #9aa4b8 !important;
+  border-color: rgba(255, 255, 255, 0.06) !important;
+  opacity: 1 !important;
+}
+
+.admin-page .admin-header button,
+.admin-page .admin-security-actions button,
+.admin-deposits-page .admin-header button,
+.admin-deposits-page .admin-security-actions button,
+.admin-status-page .admin-header button,
+.admin-status-page .admin-security-actions button,
+.admin-security-page .admin-header button,
+.admin-security-page .admin-security-actions button {
+  box-shadow: none !important;
+}

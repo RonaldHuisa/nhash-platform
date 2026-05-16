@@ -42,7 +42,7 @@ const SUPPORTED_PAYMENT_NETWORKS = {
     collectionWalletEnv: "COLLECTION_POLYGON_USDT_WALLET",
     platformPrivateKeyEnv: "PLATFORM_POLYGON_PRIVATE_KEY",
     topupBufferEnv: "POLYGON_TOPUP_BUFFER",
-    topupBufferDefault: "0.02",
+    topupBufferDefault: "0.05",
     minWithdrawEnv: "POLYGON_MIN_WITHDRAW_USDT",
     minWithdrawDefault: 1,
     withdrawFeePercentEnv: "POLYGON_WITHDRAW_FEE_PERCENT",

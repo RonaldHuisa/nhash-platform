@@ -18,11 +18,12 @@ function buildActionState(item) {
   const isSwept = sweepStatus === "swept";
 
   return {
-    canSendGas: !isSwept && !hasGasTx && !hasSweepTx,
-    // Recolectar solo se habilita cuando el gas ya fue confirmado.
-    // Si el gas sigue pendiente, el admin debe presionar Verificar primero.
+    // Permite reenviar gas si el anterior ya confirmó pero todavía no alcanza.
+    // En Polygon el gas puede variar rápido; por eso no bloqueamos el botón solo por existir bnb_topup_tx_hash.
+    canSendGas: !isSwept && !hasSweepTx && sweepStatus !== "gas_pending" && sweepStatus !== "collecting",
+    // Recolectar solo se habilita cuando el gas ya fue confirmado y validado como suficiente.
     canCollect: !isSwept && !hasSweepTx && sweepStatus === "gas_ready",
-    canRefresh: !isSwept && (hasGasTx || hasSweepTx || sweepStatus === "gas_pending" || sweepStatus === "collecting"),
+    canRefresh: !isSwept && (hasGasTx || hasSweepTx || sweepStatus === "gas_pending" || sweepStatus === "collecting" || sweepStatus === "gas_short"),
   };
 }
 
@@ -66,6 +67,9 @@ async function listAdminDeposits(req, res) {
       ) vp ON true
       LEFT JOIN vip_packages pkg ON pkg.id = vp.package_id
       WHERE d.status = 'confirmed'
+        AND COALESCE(d.sweep_status, '') NOT IN ('manual', 'hidden_manual')
+        AND COALESCE(d.tx_hash, '') NOT LIKE 'manual_admin_recharge_%'
+        AND COALESCE(d.token_contract, '') <> 'manual-admin-credit'
       ORDER BY d.created_at DESC
       LIMIT $1
       `,

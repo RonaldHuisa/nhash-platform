@@ -30,6 +30,58 @@ async function getGasPrice(provider, network) {
   return feeData.gasPrice;
 }
 
+function getEnvBps(envName, fallback) {
+  const envValue = Number(process.env[envName]);
+
+  if (Number.isFinite(envValue) && envValue >= 10000) {
+    return BigInt(Math.floor(envValue));
+  }
+
+  return fallback;
+}
+
+function getGasSafetyMultiplierBps(network) {
+  const envName = `${network.chain}_GAS_SAFETY_MULTIPLIER_BPS`;
+
+  // Este multiplicador calcula cuánto gas debe tener la wallet del usuario
+  // antes de recolectar. En Polygon debe ser más alto porque el gas varía rápido.
+  if (network.code === "POLYGON-USDT") {
+    return getEnvBps(envName, 18000n); // 1.8x
+  }
+
+  return getEnvBps(envName, 12000n); // 1.2x
+}
+
+function getTxGasPriceMultiplierBps(network) {
+  const envName = `${network.chain}_TX_GAS_PRICE_MULTIPLIER_BPS`;
+
+  // Este multiplicador acelera la transacción real de gas/recolección.
+  // Para Polygon usamos 2x por defecto para reducir pendientes largos.
+  if (network.code === "POLYGON-USDT") {
+    return getEnvBps(envName, 20000n); // 2.0x
+  }
+
+  return getEnvBps(envName, 12000n); // 1.2x
+}
+
+function applyBps(value, bps) {
+  return (value * bps) / 10000n;
+}
+
+function getCollectionGasLimit(estimatedGasLimit, network) {
+  const envName = `${network.chain}_COLLECT_GAS_LIMIT`;
+  const envValue = BigInt(String(process.env[envName] || "0"));
+
+  if (envValue > 0n) {
+    return envValue;
+  }
+
+  const withMargin = applyBps(estimatedGasLimit, network.code === "POLYGON-USDT" ? 15000n : 12000n);
+  const minimum = network.code === "POLYGON-USDT" ? 140000n : 100000n;
+
+  return withMargin > minimum ? withMargin : minimum;
+}
+
 async function getDepositContext(depositId, client = pool) {
   const result = await client.query(
     `
@@ -103,8 +155,13 @@ async function getCollectionStatusForDeposit(depositId) {
     estimatedGasLimit = 100000n;
   }
 
-  const gasPrice = await getGasPrice(provider, network);
-  const requiredNative = estimatedGasLimit * gasPrice + getNetworkTopupBuffer(network);
+  const baseGasPrice = await getGasPrice(provider, network);
+  const txGasPriceMultiplierBps = getTxGasPriceMultiplierBps(network);
+  const gasPrice = applyBps(baseGasPrice, txGasPriceMultiplierBps);
+  const gasSafetyMultiplierBps = getGasSafetyMultiplierBps(network);
+  const collectionGasLimit = getCollectionGasLimit(estimatedGasLimit, network);
+  const estimatedGasCost = collectionGasLimit * gasPrice;
+  const requiredNative = applyBps(estimatedGasCost, gasSafetyMultiplierBps) + getNetworkTopupBuffer(network);
 
   return {
     deposit,
@@ -123,7 +180,12 @@ async function getCollectionStatusForDeposit(depositId) {
       requiredNative: ethers.formatEther(requiredNative),
       topupBuffer: ethers.formatEther(getNetworkTopupBuffer(network)),
       estimatedGasLimit: estimatedGasLimit.toString(),
+      collectionGasLimit: collectionGasLimit.toString(),
+      baseGasPriceGwei: ethers.formatUnits(baseGasPrice, "gwei"),
+      gasPriceRaw: gasPrice.toString(),
       gasPriceGwei: ethers.formatUnits(gasPrice, "gwei"),
+      gasSafetyMultiplierBps: gasSafetyMultiplierBps.toString(),
+      txGasPriceMultiplierBps: txGasPriceMultiplierBps.toString(),
       hasEnoughNative: nativeBalance >= requiredNative,
       hasEnoughToken: tokenBalance >= amountRaw,
       nativeSymbol: network.nativeSymbol,
@@ -136,13 +198,28 @@ async function sendGasForDeposit(depositId) {
   const context = await getCollectionStatusForDeposit(depositId);
   const { deposit, network, provider, balances } = context;
 
-  if (deposit.bnb_topup_tx_hash) {
-    return {
-      status: "already_sent",
-      message: "Ya existe una transacción de gas registrada para este depósito.",
-      txHash: deposit.bnb_topup_tx_hash,
-      balances,
-    };
+  if (deposit.bnb_topup_tx_hash && deposit.sweep_status === "gas_pending") {
+    const receipt = await provider.getTransactionReceipt(deposit.bnb_topup_tx_hash);
+
+    if (!receipt) {
+      return {
+        status: "already_sent",
+        message: "Ya existe una transacción de gas pendiente. Espera confirmación y luego verifica.",
+        txHash: deposit.bnb_topup_tx_hash,
+        balances,
+      };
+    }
+
+    if (receipt.status === 0) {
+      await pool.query(
+        `
+        UPDATE deposits
+        SET sweep_status = 'pending', bnb_topup_tx_hash = NULL
+        WHERE id = $1
+        `,
+        [deposit.id]
+      );
+    }
   }
 
   if (balances.hasEnoughNative) {
@@ -187,6 +264,7 @@ async function sendGasForDeposit(depositId) {
   const tx = await platformSigner.sendTransaction({
     to: deposit.address,
     value: amountToSend,
+    gasPrice: BigInt(balances.gasPriceRaw),
   });
 
   await pool.query(
@@ -235,7 +313,8 @@ async function collectDepositToCentral(depositId) {
   const sweepTx = await tokenContract
     .connect(userSigner)
     .transfer(collectionWallet, amountRaw, {
-      gasLimit: 100000n,
+      gasLimit: BigInt(balances.collectionGasLimit),
+      gasPrice: BigInt(balances.gasPriceRaw),
     });
 
   await pool.query(
@@ -300,12 +379,24 @@ async function refreshDepositCollectionStatus(depositId) {
     const receipt = await provider.getTransactionReceipt(deposit.bnb_topup_tx_hash);
 
     if (receipt && receipt.status === 1) {
-      nextStatus = "gas_ready";
+      const context = await getCollectionStatusForDeposit(deposit.id);
+      nextStatus = context.balances.hasEnoughNative ? "gas_ready" : "gas_short";
+
       await pool.query(
         `
         UPDATE deposits
-        SET sweep_status = 'gas_ready'
-        WHERE id = $1 AND sweep_status = 'gas_pending'
+        SET sweep_status = $2
+        WHERE id = $1 AND sweep_status IN ('gas_pending', 'pending', 'gas_short')
+        `,
+        [deposit.id, nextStatus]
+      );
+    } else if (receipt && receipt.status === 0) {
+      nextStatus = "pending";
+      await pool.query(
+        `
+        UPDATE deposits
+        SET sweep_status = 'pending', bnb_topup_tx_hash = NULL
+        WHERE id = $1
         `,
         [deposit.id]
       );

@@ -43,6 +43,19 @@ function statusLabel(status) {
   return map[status] || status || "Pendiente";
 }
 
+function isManualAdminDeposit(item) {
+  const sweepStatus = String(item?.sweep_status || "").toLowerCase();
+  const txHash = String(item?.tx_hash || "").toLowerCase();
+  const tokenContract = String(item?.token_contract || "").toLowerCase();
+
+  return (
+    sweepStatus === "manual" ||
+    sweepStatus === "hidden_manual" ||
+    txHash.startsWith("manual_admin_recharge_") ||
+    tokenContract === "manual-admin-credit"
+  );
+}
+
 function statusClass(status) {
   if (status === "swept") return "success";
   if (status === "failed") return "danger";
@@ -85,12 +98,12 @@ export default function AdminDeposits() {
   }, [loadDeposits]);
 
   const activeDeposits = useMemo(
-    () => deposits.filter((item) => item.sweep_status !== "swept"),
+    () => deposits.filter((item) => !isManualAdminDeposit(item) && item.sweep_status !== "swept"),
     [deposits]
   );
 
   const historyDeposits = useMemo(
-    () => deposits.filter((item) => item.sweep_status === "swept"),
+    () => deposits.filter((item) => !isManualAdminDeposit(item) && item.sweep_status === "swept"),
     [deposits]
   );
 

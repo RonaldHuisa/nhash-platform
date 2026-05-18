@@ -17152,9 +17152,7 @@ button:hover,
   box-shadow: none !important;
 }
 
-/* =========================================================
-   ADMIN GROWTH / PROMOTORES Y AJUSTES
-========================================================= */
+
 .admin-growth-page {
   padding: 22px 18px 108px !important;
   color: var(--admin-text-1, #f4efe4) !important;

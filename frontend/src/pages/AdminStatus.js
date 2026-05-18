@@ -155,8 +155,6 @@ export default function AdminStatus() {
             </div>
           </section>
 
-
-
           <section className="panel admin-status-section">
             <div className="admin-status-section-title admin-status-section-title-action">
               <FiPlusCircle />

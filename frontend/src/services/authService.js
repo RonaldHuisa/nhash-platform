@@ -477,3 +477,27 @@ export function markAdminIpSuspicious(ip, reason) {
     body: JSON.stringify({ reason }),
   });
 }
+
+
+export function getAdminGrowthPromoters(search = "") {
+  const query = search ? `?search=${encodeURIComponent(search)}` : "";
+  return request(`/admin/growth/promoters${query}`, { method: "GET" });
+}
+
+export function getAdminGrowthUser(email) {
+  return request(`/admin/growth/user?email=${encodeURIComponent(email)}`, { method: "GET" });
+}
+
+export function addAdminManualInvestment(payload) {
+  return request("/admin/growth/manual-investment", {
+    method: "POST",
+    body: JSON.stringify(payload),
+  });
+}
+
+export function addAdminManualMiningPower(payload) {
+  return request("/admin/growth/manual-mining-power", {
+    method: "POST",
+    body: JSON.stringify(payload),
+  });
+}

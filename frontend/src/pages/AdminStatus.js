@@ -10,6 +10,7 @@ import {
   FiTrendingUp,
   FiShield,
   FiDownloadCloud,
+  FiPlusCircle,
 } from "react-icons/fi";
 import { useNavigate } from "react-router-dom";
 import { getAdminStatus } from "../services/authService";
@@ -149,6 +150,22 @@ export default function AdminStatus() {
               </div>
               <button className="admin-status-small-action" type="button" onClick={() => navigate("/admin/security")}>
                 <FiShield />
+                Abrir
+              </button>
+            </div>
+          </section>
+
+
+
+          <section className="panel admin-status-section">
+            <div className="admin-status-section-title admin-status-section-title-action">
+              <FiPlusCircle />
+              <div>
+                <h3>Promotores y ajustes</h3>
+                <p>Ranking de invitados directos con inversión y recargas manuales administrativas.</p>
+              </div>
+              <button className="admin-status-small-action" type="button" onClick={() => navigate("/admin/growth")}>
+                <FiPlusCircle />
                 Abrir
               </button>
             </div>

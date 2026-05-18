@@ -17151,3 +17151,251 @@ button:hover,
 .admin-security-page .admin-security-actions button {
   box-shadow: none !important;
 }
+
+/* =========================================================
+   ADMIN GROWTH / PROMOTORES Y AJUSTES
+========================================================= */
+.admin-growth-page {
+  padding: 22px 18px 108px !important;
+  color: var(--admin-text-1, #f4efe4) !important;
+  background: radial-gradient(circle at 50% -10%, rgba(246, 183, 60, 0.10), transparent 32%), #09090b !important;
+}
+
+.admin-growth-page input,
+.admin-growth-page textarea {
+  background: #111217 !important;
+  color: #f4efe4 !important;
+  border: 1px solid rgba(246, 183, 60, 0.24) !important;
+  border-radius: 16px !important;
+  padding: 12px 13px !important;
+  font-weight: 750 !important;
+  width: 100% !important;
+  outline: none !important;
+}
+
+.admin-growth-page input::placeholder,
+.admin-growth-page textarea::placeholder {
+  color: #8e846f !important;
+}
+
+.admin-growth-hero,
+.admin-growth-lookup,
+.admin-growth-ranking,
+.admin-growth-user-card,
+.admin-growth-promoter-card {
+  background: linear-gradient(180deg, #1b1c23 0%, #14151a 100%) !important;
+  border: 1px solid rgba(246, 183, 60, 0.18) !important;
+  color: #f4efe4 !important;
+  box-shadow: 0 18px 34px rgba(0, 0, 0, 0.24) !important;
+}
+
+.admin-growth-hero-title,
+.admin-growth-section-title,
+.admin-growth-user-top,
+.admin-growth-promoter-top {
+  display: flex !important;
+  align-items: center !important;
+  justify-content: space-between !important;
+  gap: 12px !important;
+}
+
+.admin-growth-hero-title,
+.admin-growth-section-title {
+  justify-content: flex-start !important;
+  margin-bottom: 14px !important;
+}
+
+.admin-growth-section-title > svg {
+  width: 38px !important;
+  height: 38px !important;
+  padding: 10px !important;
+  border-radius: 15px !important;
+  background: rgba(246, 183, 60, 0.12) !important;
+  color: #ffd36a !important;
+  border: 1px solid rgba(246, 183, 60, 0.22) !important;
+  flex: 0 0 auto !important;
+}
+
+.admin-growth-hero h3,
+.admin-growth-section-title h3,
+.admin-growth-user-top h3,
+.admin-growth-promoter-top h3,
+.admin-growth-action-box h4 {
+  margin: 0 !important;
+  color: #f4efe4 !important;
+  font-weight: 900 !important;
+  letter-spacing: -0.03em !important;
+}
+
+.admin-growth-hero p,
+.admin-growth-section-title p,
+.admin-growth-user-top p,
+.admin-growth-promoter-top p,
+.admin-growth-action-box p {
+  margin: 4px 0 0 !important;
+  color: #c8cedd !important;
+  font-size: 12px !important;
+  line-height: 1.35 !important;
+  font-weight: 650 !important;
+}
+
+.admin-growth-stats,
+.admin-growth-user-grid,
+.admin-growth-levels,
+.admin-growth-actions-panel {
+  display: grid !important;
+  gap: 10px !important;
+}
+
+.admin-growth-stats {
+  grid-template-columns: repeat(4, minmax(0, 1fr)) !important;
+}
+
+.admin-growth-user-grid {
+  grid-template-columns: repeat(2, minmax(0, 1fr)) !important;
+  margin: 12px 0 !important;
+}
+
+.admin-growth-levels {
+  grid-template-columns: repeat(3, minmax(0, 1fr)) !important;
+  margin-top: 12px !important;
+}
+
+.admin-growth-actions-panel {
+  grid-template-columns: repeat(2, minmax(0, 1fr)) !important;
+  margin-top: 14px !important;
+}
+
+.admin-growth-stats div,
+.admin-growth-user-grid div,
+.admin-growth-level-box,
+.admin-growth-action-box {
+  background: linear-gradient(180deg, #202636 0%, #191d27 100%) !important;
+  border: 1px solid rgba(246, 183, 60, 0.16) !important;
+  border-radius: 17px !important;
+  padding: 12px !important;
+  color: #f4efe4 !important;
+}
+
+.admin-growth-stats span,
+.admin-growth-user-grid span,
+.admin-growth-level-box span {
+  display: block !important;
+  color: #9ea7ba !important;
+  font-size: 11px !important;
+  margin-bottom: 5px !important;
+  font-weight: 750 !important;
+}
+
+.admin-growth-stats strong,
+.admin-growth-user-grid strong,
+.admin-growth-level-box strong,
+.admin-growth-level-box b {
+  display: block !important;
+  color: #ead7a2 !important;
+  font-weight: 900 !important;
+  line-height: 1.25 !important;
+  overflow-wrap: anywhere !important;
+}
+
+.admin-growth-level-box small,
+.admin-growth-level-box em {
+  display: block !important;
+  margin-top: 5px !important;
+  color: #c8cedd !important;
+  font-size: 11px !important;
+  font-style: normal !important;
+  font-weight: 700 !important;
+}
+
+.admin-growth-level-box b {
+  margin-top: 7px !important;
+  color: #ffd36a !important;
+}
+
+.admin-growth-search-row {
+  display: grid !important;
+  grid-template-columns: 1fr auto !important;
+  gap: 10px !important;
+  align-items: center !important;
+  margin-bottom: 14px !important;
+}
+
+.admin-growth-search-row button,
+.admin-growth-promoter-top button,
+.admin-growth-action-box button {
+  border: 1px solid rgba(246, 183, 60, 0.26) !important;
+  border-radius: 16px !important;
+  padding: 12px 14px !important;
+  background: linear-gradient(135deg, #ffd36a 0%, #f6b73c 48%, #ff9b34 100%) !important;
+  color: #16120a !important;
+  font-weight: 900 !important;
+  display: inline-flex !important;
+  align-items: center !important;
+  justify-content: center !important;
+  gap: 7px !important;
+  white-space: nowrap !important;
+}
+
+.admin-growth-search-row button:disabled,
+.admin-growth-action-box button:disabled {
+  background: rgba(255, 255, 255, 0.10) !important;
+  color: #9aa4b8 !important;
+  border-color: rgba(255, 255, 255, 0.06) !important;
+}
+
+.admin-growth-user-card,
+.admin-growth-promoter-card {
+  border-radius: 22px !important;
+  padding: 14px !important;
+  margin-top: 12px !important;
+}
+
+.admin-growth-list {
+  display: grid !important;
+  gap: 12px !important;
+}
+
+.admin-growth-action-box {
+  display: grid !important;
+  gap: 10px !important;
+}
+
+.admin-growth-action-box h4 {
+  display: flex !important;
+  align-items: center !important;
+  gap: 8px !important;
+  font-size: 14px !important;
+}
+
+.admin-growth-note {
+  margin-top: 12px !important;
+  resize: vertical !important;
+}
+
+.ranking-search {
+  margin-top: 12px !important;
+}
+
+@media (max-width: 520px) {
+  .admin-growth-stats,
+  .admin-growth-user-grid,
+  .admin-growth-levels,
+  .admin-growth-actions-panel {
+    grid-template-columns: 1fr !important;
+  }
+
+  .admin-growth-search-row {
+    grid-template-columns: 1fr !important;
+  }
+
+  .admin-growth-user-top,
+  .admin-growth-promoter-top {
+    align-items: flex-start !important;
+    flex-direction: column !important;
+  }
+
+  .admin-growth-promoter-top button {
+    width: 100% !important;
+  }
+}

@@ -59,7 +59,7 @@ function getMaxNumber(...values) {
 const LIVE_STATS_CONFIG = {
   startAtMs: new Date("2026-05-12T00:00:00-05:00").getTime(),
   intervalMs: 6 * 60 * 60 * 1000,
-  baseUsers: 3500,
+  baseUsers: 30500,
   baseProduction: 125315,
   usersStep: 18,
   productionStep: 1350,

@@ -141,7 +141,7 @@ async function ensurePromoEventSchema(clientOrPool = pool) {
     VALUES (
       $1,
       'Evento Promoción NiceHash',
-      TIMESTAMP '2026-05-21 00:00:00',
+      TIMESTAMP '2026-05-22 00:00:00',
       TIMESTAMP '2026-05-30 23:59:59',
       true
     )

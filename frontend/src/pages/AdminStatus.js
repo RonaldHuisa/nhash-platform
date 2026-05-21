@@ -206,6 +206,33 @@ export default function AdminStatus() {
             </div>
           </section>
 
+
+          <section className="panel admin-status-section">
+            <div className="admin-status-section-title admin-status-section-title-action">
+              <FiPlusCircle />
+              <div>
+                <h3>Evento de promoción</h3>
+                <p>Consulta recompensas reclamadas y registros contabilizados.</p>
+              </div>
+              <button className="admin-status-small-action" type="button" onClick={() => navigate("/admin/promo-event")}>
+                <FiPlusCircle />
+                Gestionar
+              </button>
+            </div>
+
+            <div className="admin-status-list compact">
+              <div>
+                <span>Evento activo</span>
+                <strong>21/05/2026 - 30/05/2026</strong>
+              </div>
+
+              <div>
+                <span>Recompensa máxima</span>
+                <strong>50.00 USDT total</strong>
+              </div>
+            </div>
+          </section>
+
           <section className="panel admin-status-section">
             <div className="admin-status-section-title admin-status-section-title-action">
               <FiAlertCircle />

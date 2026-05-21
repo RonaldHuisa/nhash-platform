@@ -501,3 +501,20 @@ export function addAdminManualMiningPower(payload) {
     body: JSON.stringify(payload),
   });
 }
+
+
+export function getPromoEventStatus() {
+  return request("/promo-event/status", { method: "GET" });
+}
+
+export function claimPromoEventTask(taskCode) {
+  return request(`/promo-event/tasks/${taskCode}/claim`, { method: "POST" });
+}
+
+export function getAdminPromoClaims() {
+  return request("/admin/promo-event/claims", { method: "GET" });
+}
+
+export function getAdminPromoUserDetail(userId) {
+  return request(`/admin/promo-event/users/${userId}`, { method: "GET" });
+}

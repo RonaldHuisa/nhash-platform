@@ -22,6 +22,8 @@ import Tasks from "./pages/Tasks";
 import HashRewards from "./pages/HashRewards";
 import Reinvest from "./pages/Reinvest";
 import About from "./pages/About";
+import PromoEvent from "./pages/PromoEvent";
+import AdminPromoEvent from "./pages/AdminPromoEvent";
 
 import { LanguageProvider } from "./i18n/I18nContext";
 import DomTranslator from "./i18n/DomTranslator";
@@ -53,10 +55,12 @@ function ProtectedLayout() {
         <Route path="/admin/withdrawals" element={<AdminWithdrawals />} />
         <Route path="/admin/status" element={<AdminStatus />} />
         <Route path="/admin/deposits" element={<AdminDeposits />} />
+        <Route path="/admin/promo-event" element={<AdminPromoEvent />} />
         <Route path="/admin/security" element={<AdminSecurity />} />
         <Route path="/admin/growth" element={<AdminGrowth />} />
         <Route path="/members/:level" element={<MembersList />} />
         <Route path="/tasks" element={<Tasks />} />
+        <Route path="/promo-event" element={<PromoEvent />} />
         <Route path="/rewards" element={<HashRewards />} />
         <Route path="/reinvest" element={<Reinvest />} />
         <Route path="/about" element={<About />} />

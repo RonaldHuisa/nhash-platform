@@ -19,6 +19,8 @@ const hashRewardsRoutes = require("./routes/hashRewardsRoutes");
 const reinvestRoutes = require("./routes/reinvestRoutes");
 const marketRoutes = require("./routes/marketRoutes");
 const alchemyWebhookRoutes = require("./routes/alchemyWebhookRoutes");
+const promoEventRoutes = require("./routes/promoEventRoutes");
+const adminPromoEventRoutes = require("./routes/adminPromoEventRoutes");
 const { startAutomaticDepositScanner } = require("./services/depositScannerService");
 
 
@@ -86,6 +88,8 @@ app.use("/api/tasks", taskRoutes);
 app.use("/api/mining", miningRoutes);
 app.use("/api/hash-rewards", hashRewardsRoutes);
 app.use("/api/reinvest", reinvestRoutes);
+app.use("/api/promo-event", promoEventRoutes);
+app.use("/api/admin", adminPromoEventRoutes);
 app.use("/api/market", marketRoutes);
 app.use("/api/webhooks/alchemy", alchemyWebhookRoutes);
 

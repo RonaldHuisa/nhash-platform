@@ -393,7 +393,7 @@ export default function Home() {
             </p>
 
             <p>
-              Esta actividad estará disponible únicamente hasta el <strong>30/05</strong>. Podrás ganar hasta
+              Esta actividad contabiliza desde el <strong>22/05 a las 00:00 UTC</strong> y estará disponible únicamente hasta el <strong>30/05</strong>. Podrás ganar hasta
               <strong> 50 USDT</strong> completando las tareas activas y apoyando el crecimiento de la comunidad NiceHash.
             </p>
 

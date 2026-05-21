@@ -223,7 +223,7 @@ export default function AdminStatus() {
             <div className="admin-status-list compact">
               <div>
                 <span>Evento activo</span>
-                <strong>21/05/2026 - 30/05/2026</strong>
+                <strong>22/05/2026 - 30/05/2026</strong>
               </div>
 
               <div>

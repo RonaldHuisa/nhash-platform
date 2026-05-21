@@ -17,7 +17,7 @@ import {
   getPromoEventStatus,
 } from "../services/authService";
 
-const PROMO_EVENT_END_MS = new Date("2026-05-30T23:59:59-05:00").getTime();
+const PROMO_EVENT_END_MS = new Date("2026-05-30T23:59:59Z").getTime();
 
 function resolveEventEndMs(event) {
   const rawEnd = event?.endsAt || event?.ends_at || event?.endAt || event?.end_at;

@@ -5,7 +5,7 @@ const pool = require("../config/db");
 const { addAlchemyAddressToNetworkWebhooks } = require("../services/alchemyWebhookService");
 
 const { generateUniqueReferralCode } = require("../utils/referralUtil");
-const { getClientIp, ensureSecuritySchema, captureRegisterIp, captureLoginIp } = require("../services/securityService");
+const { getClientIp, ensureSecuritySchema, captureRegisterIp, captureLoginIp, ensureIpCanRegister, logSecurityEvent } = require("../services/securityService");
 
 
 const {
@@ -77,6 +77,24 @@ async function register(req, res) {
             await client.query("ROLLBACK");
             return res.status(409).json({
                 message: "Este correo ya está registrado.",
+            });
+        }
+
+        const ipRegisterCheck = await ensureIpCanRegister(client, requestIp);
+
+        if (!ipRegisterCheck.ok) {
+            if (requestIp) {
+                await logSecurityEvent(client, {
+                    userId: null,
+                    eventType: "REGISTER_IP_LIMIT_BLOCKED",
+                    reason: `Registro bloqueado: ${ipRegisterCheck.totalAccounts} cuentas existentes desde la misma IP. Límite: ${ipRegisterCheck.limit}.`,
+                    ipAddress: requestIp,
+                });
+            }
+
+            await client.query("ROLLBACK");
+            return res.status(429).json({
+                message: ipRegisterCheck.message,
             });
         }
 

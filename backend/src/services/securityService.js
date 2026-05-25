@@ -2,6 +2,7 @@ const pool = require("../config/db");
 
 const SUSPICIOUS_IP_THRESHOLD = Number(process.env.SUSPICIOUS_IP_THRESHOLD || 5);
 const REVIEW_IP_THRESHOLD = Number(process.env.REVIEW_IP_THRESHOLD || 3);
+const MAX_REGISTER_ACCOUNTS_PER_IP = Number(process.env.MAX_REGISTER_ACCOUNTS_PER_IP || 5);
 
 function getClientIp(req) {
   const forwarded = req.headers["x-forwarded-for"];
@@ -156,6 +157,53 @@ async function autoMarkSuspiciousByIp(clientOrPool, ipAddress) {
   return { marked: updateResult.rowCount || 0, totalAccounts };
 }
 
+
+async function countRegisteredAccountsByIp(clientOrPool, ipAddress) {
+  if (!ipAddress) {
+    return 0;
+  }
+
+  await ensureSecuritySchema(clientOrPool);
+
+  const result = await clientOrPool.query(
+    `
+    SELECT COUNT(*)::int AS total
+    FROM users
+    WHERE register_ip = $1
+    `,
+    [ipAddress]
+  );
+
+  return Number(result.rows[0]?.total || 0);
+}
+
+async function ensureIpCanRegister(clientOrPool, ipAddress) {
+  if (!ipAddress) {
+    return {
+      ok: true,
+      totalAccounts: 0,
+      limit: MAX_REGISTER_ACCOUNTS_PER_IP,
+    };
+  }
+
+  const totalAccounts = await countRegisteredAccountsByIp(clientOrPool, ipAddress);
+
+  if (totalAccounts >= MAX_REGISTER_ACCOUNTS_PER_IP) {
+    return {
+      ok: false,
+      totalAccounts,
+      limit: MAX_REGISTER_ACCOUNTS_PER_IP,
+      message: "No se puede completar el registro desde esta conexión. Intenta más tarde o contacta con soporte.",
+    };
+  }
+
+  return {
+    ok: true,
+    totalAccounts,
+    limit: MAX_REGISTER_ACCOUNTS_PER_IP,
+  };
+}
+
 async function getUserSecurityStatus(clientOrPool, userId) {
   await ensureSecuritySchema(clientOrPool);
   const result = await clientOrPool.query(
@@ -202,12 +250,15 @@ async function ensureNotBanned(clientOrPool, userId, actionLabel = "realizar est
 module.exports = {
   SUSPICIOUS_IP_THRESHOLD,
   REVIEW_IP_THRESHOLD,
+  MAX_REGISTER_ACCOUNTS_PER_IP,
   getClientIp,
   ensureSecuritySchema,
   logSecurityEvent,
   captureRegisterIp,
   captureLoginIp,
   autoMarkSuspiciousByIp,
+  countRegisteredAccountsByIp,
+  ensureIpCanRegister,
   getUserSecurityStatus,
   ensureNotBanned,
 };

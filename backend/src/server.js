@@ -22,9 +22,11 @@ const alchemyWebhookRoutes = require("./routes/alchemyWebhookRoutes");
 const promoEventRoutes = require("./routes/promoEventRoutes");
 const adminPromoEventRoutes = require("./routes/adminPromoEventRoutes");
 const { startAutomaticDepositScanner } = require("./services/depositScannerService");
+const { apiRateLimiter } = require("./middleware/rateLimitMiddleware");
 
 
 const app = express();
+app.set("trust proxy", 1);
 
 const allowedOrigins = [
   "http://localhost:3000",
@@ -58,6 +60,8 @@ app.use(express.json({
     req.rawBody = buf ? buf.toString("utf8") : "";
   },
 }));
+
+app.use("/api", apiRateLimiter);
 
 app.use("/api", (req, res, next) => {
   res.set("Cache-Control", "no-store, no-cache, must-revalidate, proxy-revalidate");

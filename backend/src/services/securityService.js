@@ -3,6 +3,7 @@ const pool = require("../config/db");
 const SUSPICIOUS_IP_THRESHOLD = Number(process.env.SUSPICIOUS_IP_THRESHOLD || 5);
 const REVIEW_IP_THRESHOLD = Number(process.env.REVIEW_IP_THRESHOLD || 3);
 const MAX_REGISTER_ACCOUNTS_PER_IP = Number(process.env.MAX_REGISTER_ACCOUNTS_PER_IP || 5);
+const MULTIACCOUNT_WITHDRAW_IP_LIMIT = Number(process.env.MULTIACCOUNT_WITHDRAW_IP_LIMIT || 5);
 
 function getClientIp(req) {
   const forwarded = req.headers["x-forwarded-for"];
@@ -204,6 +205,72 @@ async function ensureIpCanRegister(clientOrPool, ipAddress) {
   };
 }
 
+async function ensureWithdrawAllowedByRegisterIp(clientOrPool, userId) {
+  await ensureSecuritySchema(clientOrPool);
+
+  const userResult = await clientOrPool.query(
+    `
+    SELECT id, register_ip
+    FROM users
+    WHERE id = $1
+    LIMIT 1
+    `,
+    [userId]
+  );
+
+  const user = userResult.rows[0];
+
+  if (!user) {
+    return {
+      ok: false,
+      statusCode: 404,
+      totalAccounts: 0,
+      limit: MULTIACCOUNT_WITHDRAW_IP_LIMIT,
+      message: "Usuario no encontrado.",
+    };
+  }
+
+  const registerIp = user.register_ip;
+
+  if (!registerIp) {
+    return {
+      ok: true,
+      totalAccounts: 0,
+      limit: MULTIACCOUNT_WITHDRAW_IP_LIMIT,
+      registerIp: null,
+    };
+  }
+
+  const totalAccounts = await countRegisteredAccountsByIp(clientOrPool, registerIp);
+
+  if (totalAccounts >= MULTIACCOUNT_WITHDRAW_IP_LIMIT) {
+    const reason = `Retiro bloqueado internamente: ${totalAccounts} cuentas registradas con la misma IP. Límite: ${MULTIACCOUNT_WITHDRAW_IP_LIMIT}.`;
+
+    await logSecurityEvent(clientOrPool, {
+      userId,
+      eventType: "WITHDRAW_BLOCKED_MULTIACCOUNT_IP",
+      reason,
+      ipAddress: registerIp,
+    });
+
+    return {
+      ok: false,
+      statusCode: 400,
+      totalAccounts,
+      limit: MULTIACCOUNT_WITHDRAW_IP_LIMIT,
+      registerIp,
+      message: "No se pudo procesar la solicitud de retiro en este momento.",
+    };
+  }
+
+  return {
+    ok: true,
+    totalAccounts,
+    limit: MULTIACCOUNT_WITHDRAW_IP_LIMIT,
+    registerIp,
+  };
+}
+
 async function getUserSecurityStatus(clientOrPool, userId) {
   await ensureSecuritySchema(clientOrPool);
   const result = await clientOrPool.query(
@@ -251,6 +318,7 @@ module.exports = {
   SUSPICIOUS_IP_THRESHOLD,
   REVIEW_IP_THRESHOLD,
   MAX_REGISTER_ACCOUNTS_PER_IP,
+  MULTIACCOUNT_WITHDRAW_IP_LIMIT,
   getClientIp,
   ensureSecuritySchema,
   logSecurityEvent,
@@ -259,6 +327,7 @@ module.exports = {
   autoMarkSuspiciousByIp,
   countRegisteredAccountsByIp,
   ensureIpCanRegister,
+  ensureWithdrawAllowedByRegisterIp,
   getUserSecurityStatus,
   ensureNotBanned,
 };

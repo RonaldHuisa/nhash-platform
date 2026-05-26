@@ -8,7 +8,7 @@ const {
     getNetworkWithdrawFeePercent,
     isValidEvmAddress,
 } = require("../utils/paymentNetworks");
-const { ensureNotBanned, logSecurityEvent } = require("../services/securityService");
+const { ensureNotBanned, ensureWithdrawAllowedByRegisterIp, logSecurityEvent } = require("../services/securityService");
 
 const WITHDRAW_FEE_PERCENT = 8;
 const MIN_WITHDRAW_USDT = 1;
@@ -625,6 +625,14 @@ async function createWithdrawRequest(req, res) {
             return res.status(restriction.statusCode || 403).json({
                 message: restriction.message,
                 userSecurity: restriction.userSecurity,
+            });
+        }
+
+        const multiaccountWithdrawCheck = await ensureWithdrawAllowedByRegisterIp(client, userId);
+        if (!multiaccountWithdrawCheck.ok) {
+            await client.query("ROLLBACK");
+            return res.status(multiaccountWithdrawCheck.statusCode || 400).json({
+                message: multiaccountWithdrawCheck.message || "No se pudo procesar la solicitud de retiro en este momento.",
             });
         }
 

@@ -1,10 +1,11 @@
-import React, { useState } from "react";
-import { Link, useNavigate } from "react-router-dom";
+import React, { useEffect, useState } from "react";
+import { Link, useLocation, useNavigate } from "react-router-dom";
 import { FiEye, FiEyeOff, FiHome, FiMail, FiLock, FiCpu } from "react-icons/fi";
 import { loginUser, saveSession } from "../services/authService";
 
 export default function Login() {
   const navigate = useNavigate();
+  const location = useLocation();
 
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
@@ -13,6 +14,17 @@ export default function Login() {
 
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState("");
+
+
+  useEffect(() => {
+    const expiredByQuery = new URLSearchParams(location.search).get("session") === "expired";
+    const expiredByStorage = sessionStorage.getItem("nicehash_session_expired") === "1";
+
+    if (expiredByQuery || expiredByStorage) {
+      setError("Tu sesión expiró. Inicia sesión nuevamente.");
+      sessionStorage.removeItem("nicehash_session_expired");
+    }
+  }, [location.search]);
 
   const isValidEmail = (value) => {
     return /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(value);

@@ -8,7 +8,6 @@ import {
   FiInfo,
   FiLink,
   FiRefreshCw,
-  FiShield,
   FiTrendingUp,
   FiUploadCloud,
   FiUsers,
@@ -97,7 +96,6 @@ export default function Home() {
   const [pointAnimating, setPointAnimating] = useState(false);
   const [pointResetting, setPointResetting] = useState(false);
   const [liveStatsTick, setLiveStatsTick] = useState(Date.now());
-  const [showPromoPopup, setShowPromoPopup] = useState(true);
 
   const loadHome = useCallback(async () => {
     try {
@@ -368,55 +366,6 @@ export default function Home() {
 
   return (
     <div className="page runpod-home-page">
-      {showPromoPopup && (
-        <div className="home-event-popup-backdrop" role="dialog" aria-modal="true" aria-labelledby="home-event-popup-title">
-          <div className="home-event-popup-card simple">
-            <button
-              className="home-event-popup-close"
-              type="button"
-              onClick={() => setShowPromoPopup(false)}
-              aria-label="Cerrar"
-            >
-              <FiX />
-            </button>
-
-            <div className="home-event-popup-icon simple">
-              <FiGift />
-            </div>
-
-            <h2 id="home-event-popup-title">Evento activo</h2>
-
-            <p>
-              NiceHash activa un evento interactivo por tiempo limitado para reconocer el compromiso de nuestros
-              líderes de equipo y motivar a los nuevos miembros que desean iniciar dentro de la plataforma con
-              mejores beneficios.
-            </p>
-
-            <p>
-              Esta actividad contabiliza desde el <strong>22/05 a las 00:00 UTC</strong> y estará disponible únicamente hasta el <strong>30/05</strong>. Podrás ganar hasta
-              <strong> 50 USDT</strong> completando las tareas activas y apoyando el crecimiento de la comunidad NiceHash.
-            </p>
-
-            <div className="home-event-popup-actions">
-              <button
-                className="primary"
-                type="button"
-                onClick={() => {
-                  setShowPromoPopup(false);
-                  navigate("/promo-event");
-                }}
-              >
-                Ver evento
-              </button>
-              <button type="button" onClick={() => setShowPromoPopup(false)}>
-                Cerrar
-              </button>
-            </div>
-          </div>
-        </div>
-      )}
-
-
       {installToast && (
         <div className="home-install-toast">
           <span>{installToast}</span>
@@ -556,11 +505,6 @@ export default function Home() {
           <span>{t("personaje")}</span>
         </button>
 
-        <button type="button" onClick={() => navigate("/promo-event")}>
-          <FiShield />
-          <span>{t("Eventos")}</span>
-        </button>
-
         <button type="button" onClick={() => navigate("/rewards")}>
           <FiGift />
           <span>{t("Premios")}</span>
@@ -582,17 +526,6 @@ export default function Home() {
         </button>
       </section>
 
-
-      <section className="home-promo-event-banner" onClick={() => navigate("/promo-event")} role="button" tabIndex={0}>
-        <div className="home-promo-event-icon">
-          <FiGift />
-        </div>
-        <div>
-          <span>Evento activo hasta el 30/05</span>
-          <strong>Invita amigos y gana hasta 50 USDT</strong>
-        </div>
-        <button type="button">Ver evento</button>
-      </section>
 
       <section className="home-points-log-card">
         <div className="home-points-log-head">

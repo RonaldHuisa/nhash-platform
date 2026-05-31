@@ -1,5 +1,48 @@
 const API_URL = process.env.REACT_APP_API_URL || "http://localhost:5000/api";
 
+function redirectToLoginBecauseSessionExpired() {
+  try {
+    localStorage.removeItem("token");
+    localStorage.removeItem("user");
+    localStorage.removeItem("wallet");
+    sessionStorage.setItem("nicehash_session_expired", "1");
+  } catch (error) {
+    console.warn("SESSION CLEANUP ERROR:", error);
+  }
+
+  if (typeof window !== "undefined") {
+    const currentPath = window.location.pathname || "";
+    if (!["/login", "/register"].includes(currentPath)) {
+      window.location.replace("/login?session=expired");
+    }
+  }
+}
+
+function isTokenExpiredOrInvalid(response, data = {}) {
+  if (!response || response.status !== 401) return false;
+
+  const message = String(data.message || data.detail || "").toLowerCase();
+  return (
+    message.includes("token") ||
+    message.includes("no autorizado") ||
+    message.includes("no autorizado") ||
+    message.includes("expirado") ||
+    message.includes("expirad") ||
+    message.includes("invalid") ||
+    message.includes("unauthorized")
+  );
+}
+
+function handleUnauthorizedResponse(response, data = {}) {
+  if (isTokenExpiredOrInvalid(response, data)) {
+    redirectToLoginBecauseSessionExpired();
+    return true;
+  }
+
+  return false;
+}
+
+
 async function request(endpoint, options = {}) {
   const token = localStorage.getItem("token");
 
@@ -28,6 +71,9 @@ async function request(endpoint, options = {}) {
   const data = await response.json().catch(() => ({}));
 
   if (!response.ok) {
+    if (handleUnauthorizedResponse(response, data)) {
+      throw new Error("Tu sesión expiró. Inicia sesión nuevamente.");
+    }
     throw new Error(data.detail || data.message || "Error en la petición.");
   }
 
@@ -92,6 +138,9 @@ export async function getMyWalletFromApi(network = "BEP20-USDT") {
   const data = await response.json();
 
   if (!response.ok) {
+    if (handleUnauthorizedResponse(response, data)) {
+      throw new Error("Tu sesión expiró. Inicia sesión nuevamente.");
+    }
     throw new Error(data.message || "Error al obtener la wallet.");
   }
 
@@ -116,6 +165,9 @@ export async function scanMyDeposits(network = "BEP20-USDT") {
   const data = await response.json();
 
   if (!response.ok) {
+    if (handleUnauthorizedResponse(response, data)) {
+      throw new Error("Tu sesión expiró. Inicia sesión nuevamente.");
+    }
     throw new Error(data.message || "Error al escanear depósitos.");
   }
 
@@ -139,6 +191,9 @@ export async function getWithdrawInfo(network = "BEP20-USDT") {
   const data = await response.json();
 
   if (!response.ok) {
+    if (handleUnauthorizedResponse(response, data)) {
+      throw new Error("Tu sesión expiró. Inicia sesión nuevamente.");
+    }
     throw new Error(data.message || "Error al obtener datos de retiro.");
   }
 
@@ -160,6 +215,9 @@ export async function createWithdrawRequest(payload) {
   const data = await response.json();
 
   if (!response.ok) {
+    if (handleUnauthorizedResponse(response, data)) {
+      throw new Error("Tu sesión expiró. Inicia sesión nuevamente.");
+    }
     throw new Error(data.message || "Error al solicitar retiro.");
   }
 
@@ -180,6 +238,9 @@ export async function getMyTransactions() {
   const data = await response.json();
 
   if (!response.ok) {
+    if (handleUnauthorizedResponse(response, data)) {
+      throw new Error("Tu sesión expiró. Inicia sesión nuevamente.");
+    }
     throw new Error(data.message || "Error al obtener historial.");
   }
 
@@ -202,6 +263,9 @@ export async function getAdminPendingWithdrawals() {
   const data = await response.json();
 
   if (!response.ok) {
+    if (handleUnauthorizedResponse(response, data)) {
+      throw new Error("Tu sesión expiró. Inicia sesión nuevamente.");
+    }
     throw new Error(data.message || "Error al cargar retiros pendientes.");
   }
 
@@ -222,6 +286,9 @@ export async function getAdminWithdrawals() {
   const data = await response.json();
 
   if (!response.ok) {
+    if (handleUnauthorizedResponse(response, data)) {
+      throw new Error("Tu sesión expiró. Inicia sesión nuevamente.");
+    }
     throw new Error(data.message || "Error al cargar historial de retiros.");
   }
 
@@ -246,6 +313,9 @@ export async function approveAdminWithdrawal(withdrawalId) {
   const data = await response.json();
 
   if (!response.ok) {
+    if (handleUnauthorizedResponse(response, data)) {
+      throw new Error("Tu sesión expiró. Inicia sesión nuevamente.");
+    }
     throw new Error(data.detail || data.message || "Error al aprobar retiro.");
   }
 
@@ -267,6 +337,9 @@ export async function getPromotionDashboard() {
   const data = await response.json();
 
   if (!response.ok) {
+    if (handleUnauthorizedResponse(response, data)) {
+      throw new Error("Tu sesión expiró. Inicia sesión nuevamente.");
+    }
     throw new Error(data.detail || data.message || "Error al cargar promoción.");
   }
 
@@ -290,6 +363,9 @@ export async function getReferralMembers(level) {
   const data = await response.json();
 
   if (!response.ok) {
+    if (handleUnauthorizedResponse(response, data)) {
+      throw new Error("Tu sesión expiró. Inicia sesión nuevamente.");
+    }
     throw new Error(data.detail || data.message || "Error al cargar miembros.");
   }
 
@@ -337,6 +413,9 @@ export async function getAdminStatus() {
   const data = await response.json();
 
   if (!response.ok) {
+    if (handleUnauthorizedResponse(response, data)) {
+      throw new Error("Tu sesión expiró. Inicia sesión nuevamente.");
+    }
     throw new Error(data.detail || data.message || "Error al cargar estado admin.");
   }
 

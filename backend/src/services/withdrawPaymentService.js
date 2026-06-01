@@ -14,6 +14,29 @@ const ERC20_ABI = [
   "function balanceOf(address account) view returns (uint256)",
 ];
 
+function normalizeTokenAmount(amount, decimals) {
+  const value = String(amount ?? "").trim();
+
+  if (!value || Number(value) <= 0 || !Number.isFinite(Number(value))) {
+    throw new Error("Monto de retiro inválido.");
+  }
+
+  const [wholeRaw, fractionRaw = ""] = value.split(".");
+  const whole = wholeRaw && wholeRaw !== "-" ? wholeRaw : "0";
+  const cleanWhole = whole.replace(/^\+/, "");
+  const cleanFraction = fractionRaw.replace(/[^0-9]/g, "");
+
+  const truncatedFraction = cleanFraction.slice(0, decimals);
+  const paddedFraction = truncatedFraction.padEnd(decimals, "0");
+
+  const normalized = decimals > 0
+    ? `${cleanWhole}.${paddedFraction}`
+    : cleanWhole;
+
+  return normalized;
+}
+
+
 function getWithdrawHotWalletPrivateKey(network) {
   if (network.code === "POLYGON-USDT") {
     return (
@@ -65,7 +88,8 @@ async function sendUsdtWithdrawal(toAddress, amountUsdt, networkCode = "BEP20-US
   );
 
   const tokenDecimals = getNetworkTokenDecimals(network);
-  const amountRaw = ethers.parseUnits(String(amountUsdt), tokenDecimals);
+  const normalizedAmountUsdt = normalizeTokenAmount(amountUsdt, tokenDecimals);
+  const amountRaw = ethers.parseUnits(normalizedAmountUsdt, tokenDecimals);
 
   const hotWalletAddress = await signer.getAddress();
 
@@ -102,7 +126,7 @@ async function sendUsdtWithdrawal(toAddress, amountUsdt, networkCode = "BEP20-US
     network: network.code,
     from: hotWalletAddress,
     to: toAddress,
-    amountUsdt,
+    amountUsdt: normalizedAmountUsdt,
   };
 }
 

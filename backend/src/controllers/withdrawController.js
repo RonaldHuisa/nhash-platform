@@ -12,7 +12,7 @@ const { ensureNotBanned, ensureWithdrawAllowedByRegisterIp, logSecurityEvent } =
 
 const WITHDRAW_FEE_PERCENT = 8;
 const MIN_WITHDRAW_USDT = 1;
-const AUTO_WITHDRAW_MAX_USDT = 100;
+const AUTO_WITHDRAW_MAX_USDT = 3;
 
 
 const WITHDRAW_DAY_NAMES = {

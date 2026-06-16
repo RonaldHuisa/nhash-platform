@@ -18,8 +18,8 @@ import {
 import { getUser, logout, changePassword } from "../services/authService";
 import { useI18n } from "../i18n/I18nContext";
 
-const TELEGRAM_SUPPORT_URL = "https://t.me/HelpNiceHash";
-const TELEGRAM_CHANNEL_URL = "https://t.me/NiceHashTelegram";
+const TELEGRAM_SUPPORT_URL = "https://t.me/";
+const TELEGRAM_CHANNEL_URL = "https://t.me/";
 
 export default function Profile() {
   const navigate = useNavigate();
